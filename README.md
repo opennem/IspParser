@@ -12,6 +12,26 @@ This notebook is very much under development. It was originally written to read 
 
 As the notebook has been updated with each new release, no effort has been made to ensure backward compatibility with earlier outlook workbooks. However this will likely be a direction for future development as we'd like to be able to go back to the very first ISP outlooks.
 
+## ISP Releases
+
+#### 2022 ISP
+
+* all data in calendar years, from 2024 to 2051
+* capacity includes `Existing and Committed` column
+
+
+#### 2024 ISP draft
+
+* all data in calendar years
+* capacity data as of 1 July in each year
+* has some funky CDP names: `CDP11 (ODP)`, `Least-cost DP`
+
+#### 2024 ISP
+
+* all data in _financial years_, from 2023-24 to 2051-52
+* introduces Subregions
+* now has emissions per region
+
 
 ## Contact
 
