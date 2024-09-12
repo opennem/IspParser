@@ -1,7 +1,7 @@
-# OpenNEM ISP Workbook Parser
+![logo](https://openelectricity.org.au/img/logo.svg)
 
-![logo](https://developers.opennem.org.au/_static/logo.png)
 
+# ISP Workbook Parser
 
 This is a jupyter notebook used for generating JSON representations from AEMO's ISP Outlook (Excel) Workbooks.
 
