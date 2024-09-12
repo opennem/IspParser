@@ -14,7 +14,7 @@ As the notebook has been updated with each new release, no effort has been made 
 
 ## Output Files
 
-Each scenario in a release is output as a JSON file in the `output` folder corresponding to the release. The scenario file includes the capacity, energy and emissions data for each development pathway, and each region (where available) and an `_all` region, being the sum of all regions.
+Each scenario in a release is output as a JSON file in the `output` folder corresponding to the release. The scenario file includes the capacity, energy, emissions and cost data for each development pathway, and each region (where available) and an `_all` region, being the sum of all regions.
 
 For example, the `step_change` scenario from the `2022 final ISP` release will be generated to `output/releases/2024_ISP_final/step_change.json`.
 
