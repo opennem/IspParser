@@ -459,6 +459,7 @@ def main():
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     json_base = os.path.join(script_dir, "..", "output", "releases")
+    output_base = os.path.join(script_dir, "..", "site")
 
     if args.command == "release":
         rel = args.release_id
@@ -476,14 +477,14 @@ def main():
         print(f"Generating charts for {rel}")
         for scenario in scenarios:
             print(f"  scenario: {scenario}")
-            generate_release_charts(rel, scenario, cdp, json_dir, script_dir)
+            generate_release_charts(rel, scenario, cdp, json_dir, output_base)
 
-        generate_release_page(rel, scenarios, cdp, odp, script_dir)
+        generate_release_page(rel, scenarios, cdp, odp, output_base)
 
     elif args.command == "compare":
         print("Generating comparison charts")
-        generate_comparison_charts(json_base, os.path.join(script_dir, "comparison"))
-        generate_top_level_page(script_dir)
+        generate_comparison_charts(json_base, os.path.join(output_base, "comparison"))
+        generate_top_level_page(output_base)
 
     elif args.command == "all":
         for rel_info in RELEASES:
@@ -498,16 +499,16 @@ def main():
             print(f"Generating charts for {rel}")
             for scenario in scenarios:
                 print(f"  scenario: {scenario}")
-                generate_release_charts(rel, scenario, cdp, json_dir, script_dir)
-            generate_release_page(rel, scenarios, cdp, odp, script_dir)
+                generate_release_charts(rel, scenario, cdp, json_dir, output_base)
+            generate_release_page(rel, scenarios, cdp, odp, output_base)
 
         print("Generating comparison charts")
-        generate_comparison_charts(json_base, os.path.join(script_dir, "comparison"))
+        generate_comparison_charts(json_base, os.path.join(output_base, "comparison"))
 
         print("Creating zip files")
-        create_release_zips(script_dir)
+        create_release_zips(output_base)
 
-        generate_top_level_page(script_dir)
+        generate_top_level_page(output_base)
         print("\nDone.")
 
     else:
