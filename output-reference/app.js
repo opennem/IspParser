@@ -2,16 +2,36 @@
 // Interactive charts from AEMO ISP workbook JSON data
 
 // ---------------------------------------------------------------------------
-// Constants (ported from generate_charts.py)
+// Chart.js defaults
+// ---------------------------------------------------------------------------
+Chart.defaults.font.family = '"DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+Chart.defaults.scales.category = Chart.defaults.scales.category || {};
+
+// ---------------------------------------------------------------------------
+// Constants (ported from build.py)
 // ---------------------------------------------------------------------------
 
 const RELEASES = [
   {
-    id: '2026_ISP_draft',
-    label: '2026 ISP Draft',
-    scenarios: ['step_change', 'accelerated_transition', 'slower_growth'],
+    id: '2022_ISP_draft',
+    label: '2022 ISP Draft',
+    scenarios: ['step_change', 'progressive_change', 'slow_change', 'hydrogen_superpower'],
+    defaultCdp: 'CDP2',
+    odp: 'CDP12',
+  },
+  {
+    id: '2022_ISP_final',
+    label: '2022 ISP Final',
+    scenarios: ['step_change', 'progressive_change', 'slow_change', 'hydrogen_superpower'],
+    defaultCdp: 'CDP2',
+    odp: 'CDP12',
+  },
+  {
+    id: '2024_ISP_draft',
+    label: '2024 ISP Draft',
+    scenarios: ['step_change', 'progressive_change', 'green_energy_exports'],
     defaultCdp: 'CDP1',
-    odp: 'CDP4 (ODP)',
+    odp: 'CDP11',
   },
   {
     id: '2024_ISP_final',
@@ -21,11 +41,11 @@ const RELEASES = [
     odp: 'CDP14',
   },
   {
-    id: '2022_ISP_final',
-    label: '2022 ISP Final',
-    scenarios: ['step_change', 'progressive_change', 'slow_change', 'hydrogen_superpower'],
-    defaultCdp: 'CDP2',
-    odp: 'CDP12',
+    id: '2026_ISP_draft',
+    label: '2026 ISP Draft',
+    scenarios: ['step_change', 'accelerated_transition', 'slower_growth'],
+    defaultCdp: 'CDP1',
+    odp: 'CDP4 (ODP)',
   },
 ];
 
@@ -87,7 +107,9 @@ const COMPARE_COLORS = {
 const COMPARE_DASHES = {
   '2026_ISP_draft': [],
   '2024_ISP_final': [8, 4],
+  '2024_ISP_draft': [8, 4],
   '2022_ISP_final': [2, 4],
+  '2022_ISP_draft': [2, 4],
 };
 
 const COST_COLORS = {
@@ -127,14 +149,21 @@ const TYPE_CONFIG = {
 const cache = new Map();
 let charts = [];
 let compareMode = false;
+const enabledReleases = new Set(RELEASES.map(r => r.id));
 
 // DOM refs
-const selRelease  = document.getElementById('sel-release');
 const selScenario = document.getElementById('sel-scenario');
 const selPathway  = document.getElementById('sel-pathway');
 const selRegion   = document.getElementById('sel-region');
-const btnCompare  = document.getElementById('btn-compare');
+const releaseBar  = document.getElementById('release-bar');
 const chartGrid   = document.getElementById('chart-grid');
+
+// Active release for normal mode
+let activeReleaseId = null;
+let lastActiveReleaseId = null;
+
+// Tom Select instances (initialised in init())
+let tsScenario, tsPathway, tsRegion;
 
 // ---------------------------------------------------------------------------
 // Data helpers
@@ -200,6 +229,24 @@ function formatScenario(s) {
   return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
+function capDropdownHeight() {
+  const dd = this.dropdown;
+  if (!dd) return;
+  const top = dd.getBoundingClientRect().top;
+  dd.style.maxHeight = Math.max(150, window.innerHeight - top - 100) + 'px';
+  dd.style.overflowY = 'auto';
+}
+
+function formatValue(v) {
+  if (v == null) return '';
+  const abs = Math.abs(v);
+  return abs < 100 ? v.toFixed(1) : Math.round(v).toLocaleString();
+}
+
+const tooltipCallbacks = {
+  label: ctx => `${ctx.dataset.label}: ${formatValue(ctx.parsed.y)}`,
+};
+
 // ---------------------------------------------------------------------------
 // Data loading
 // ---------------------------------------------------------------------------
@@ -207,10 +254,32 @@ function formatScenario(s) {
 async function loadData(releaseId, scenario) {
   const key = `${releaseId}/${scenario}`;
   if (cache.has(key)) return cache.get(key);
-  const resp = await fetch(`${releaseId}/${scenario}.json`);
-  const data = await resp.json();
-  cache.set(key, data);
-  return data;
+  const url = `${releaseId}/${scenario}.json`;
+  try {
+    const resp = await fetch(url);
+    const data = await resp.json();
+    cache.set(key, data);
+    return data;
+  } catch (e) {
+    if (location.protocol === 'file:') {
+      throw new Error(
+        'Cannot load JSON via file://. Run: python3 serve.py'
+      );
+    }
+    throw e;
+  }
+}
+
+function showFileError(msg) {
+  const grid = document.getElementById('chart-grid');
+  let banner = document.getElementById('file-error');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'file-error';
+    banner.style.cssText = 'grid-column:1/-1;padding:2rem;text-align:center;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;font-size:1.1rem';
+    grid.prepend(banner);
+  }
+  banner.innerHTML = `<strong>Error:</strong> ${msg.replace(/\n/g, '<br>')}`;
 }
 
 function showLoading(show) {
@@ -269,11 +338,11 @@ function makeStackedChart(canvasId, title, series, techList, divisor, unit) {
       maintainAspectRatio: true,
       aspectRatio: 1.5,
       scales: {
-        x: { title: { display: true, text: 'Financial Year Starting' } },
+        x: { title: { display: true, text: 'Financial Year Starting' }, ticks: { maxRotation: 90, minRotation: 90 } },
         y: { stacked: true, title: { display: true, text: unit } },
       },
       plugins: {
-        tooltip: { mode: 'index', intersect: false },
+        tooltip: { mode: 'index', intersect: false, callbacks: tooltipCallbacks },
         legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } },
       },
       interaction: { mode: 'index', intersect: false },
@@ -312,11 +381,11 @@ function makeCostChart(canvasId, series, divisor, unit) {
       maintainAspectRatio: true,
       aspectRatio: 1.5,
       scales: {
-        x: { stacked: true, title: { display: true, text: 'Financial Year Starting' } },
+        x: { stacked: true, title: { display: true, text: 'Financial Year Starting' }, ticks: { maxRotation: 90, minRotation: 90 } },
         y: { stacked: true, title: { display: true, text: unit } },
       },
       plugins: {
-        tooltip: { mode: 'index', intersect: false },
+        tooltip: { mode: 'index', intersect: false, callbacks: tooltipCallbacks },
         legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } },
       },
       interaction: { mode: 'index', intersect: false },
@@ -359,12 +428,12 @@ function makeEmissionsChart(canvasId, emData, divisor, unit) {
       maintainAspectRatio: true,
       aspectRatio: 1.5,
       scales: {
-        x: { title: { display: true, text: 'Financial Year Starting' } },
+        x: { title: { display: true, text: 'Financial Year Starting' }, ticks: { maxRotation: 90, minRotation: 90 } },
         y: { title: { display: true, text: unit } },
       },
       plugins: {
         legend: { display: false },
-        tooltip: { mode: 'index', intersect: false },
+        tooltip: { mode: 'index', intersect: false, callbacks: tooltipCallbacks },
       },
       interaction: { mode: 'index', intersect: false },
     },
@@ -377,10 +446,10 @@ function makeEmissionsChart(canvasId, emData, divisor, unit) {
 // ---------------------------------------------------------------------------
 
 async function renderNormal() {
-  const release = RELEASES.find(r => r.id === selRelease.value);
-  const scenario = selScenario.value;
-  const pathway = selPathway.value;
-  const region = selRegion.value;
+  const release = RELEASES.find(r => r.id === activeReleaseId);
+  const scenario = tsScenario.getValue();
+  const pathway = tsPathway.getValue();
+  const region = tsRegion.getValue();
 
   showLoading(true);
   destroyCharts();
@@ -390,17 +459,21 @@ async function renderNormal() {
 
     // Update pathway selector if needed
     const pathways = getPathways(data);
-    if (selPathway.options.length !== pathways.length ||
-        selPathway.options[0]?.value !== pathways[0]) {
-      populateSelect(selPathway, pathways.map(p => ({ value: p, label: p })));
+    const cdpNames = data.cdp_names || {};
+    const currentOptions = Object.keys(tsPathway.options);
+    if (currentOptions.length !== pathways.length ||
+        currentOptions[0] !== pathways[0]) {
+      populatePathwayTomSelect(tsPathway, pathways, cdpNames, release.odp);
       if (pathways.includes(pathway)) {
-        selPathway.value = pathway;
+        tsPathway.setValue(pathway, true);
+      } else if (pathways.includes(release.defaultCdp)) {
+        tsPathway.setValue(release.defaultCdp, true);
       } else {
-        selPathway.value = release.defaultCdp;
+        tsPathway.setValue(pathways[0], true);
       }
     }
 
-    const activePath = selPathway.value;
+    const activePath = tsPathway.getValue();
 
     // Energy
     const energySeries = extractSeries(data, 'energy', region, activePath);
@@ -424,6 +497,7 @@ async function renderNormal() {
 
   } catch (err) {
     console.error('Failed to load data:', err);
+    showFileError(err.message);
   }
 
   showLoading(false);
@@ -444,17 +518,20 @@ async function renderComparison() {
   // Restore standard 4-card layout
   resetChartCards(['Generation Comparison', 'Capacity Comparison', 'Emissions Comparison', '']);
 
+  // Filter to only enabled releases
+  const activeReleases = RELEASES.filter(r => enabledReleases.has(r.id));
+
   try {
     const allData = await Promise.all(
-      RELEASES.map(r => loadData(r.id, 'step_change'))
+      activeReleases.map(r => loadData(r.id, 'step_change'))
     );
 
     // Generation comparison
-    renderComparisonChart('chart-energy', 'energy', allData, 'Generation');
+    renderComparisonChart('chart-energy', 'energy', activeReleases, allData);
     // Capacity comparison
-    renderComparisonChart('chart-capacity', 'capacity', allData, 'Capacity');
+    renderComparisonChart('chart-capacity', 'capacity', activeReleases, allData);
     // Emissions comparison
-    renderEmissionsComparison('chart-emissions', allData);
+    renderEmissionsComparison('chart-emissions', activeReleases, allData);
     // Hide cost card
     document.getElementById('card-cost').style.display = 'none';
 
@@ -466,7 +543,7 @@ async function renderComparison() {
   updateHash();
 }
 
-function renderComparisonChart(canvasId, type, allData, typeLabel) {
+function renderComparisonChart(canvasId, type, releases, allData) {
   const ctx = document.getElementById(canvasId).getContext('2d');
   const datasets = [];
   const groups = COMPARE_GROUPS[type];
@@ -476,8 +553,8 @@ function renderComparisonChart(canvasId, type, allData, typeLabel) {
   // Collect all years across releases for labels
   let allYearsSet = new Set();
 
-  for (let ri = 0; ri < RELEASES.length; ri++) {
-    const release = RELEASES[ri];
+  for (let ri = 0; ri < releases.length; ri++) {
+    const release = releases[ri];
     const data = allData[ri];
     const series = extractSeries(data, type, '_all', release.defaultCdp);
 
@@ -510,11 +587,11 @@ function renderComparisonChart(canvasId, type, allData, typeLabel) {
       maintainAspectRatio: true,
       aspectRatio: 1.5,
       scales: {
-        x: { title: { display: true, text: 'Financial Year Starting' } },
+        x: { title: { display: true, text: 'Financial Year Starting' }, ticks: { maxRotation: 90, minRotation: 90 } },
         y: { title: { display: true, text: unit } },
       },
       plugins: {
-        tooltip: { mode: 'index', intersect: false },
+        tooltip: { mode: 'index', intersect: false, callbacks: tooltipCallbacks },
         legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } },
       },
       interaction: { mode: 'index', intersect: false },
@@ -523,15 +600,15 @@ function renderComparisonChart(canvasId, type, allData, typeLabel) {
   charts.push(chart);
 }
 
-function renderEmissionsComparison(canvasId, allData) {
+function renderEmissionsComparison(canvasId, releases, allData) {
   const ctx = document.getElementById(canvasId).getContext('2d');
   const datasets = [];
   const divisor = TYPE_CONFIG.emissions.divisor;
   const unit = TYPE_CONFIG.emissions.unit;
   let allYearsSet = new Set();
 
-  for (let ri = 0; ri < RELEASES.length; ri++) {
-    const release = RELEASES[ri];
+  for (let ri = 0; ri < releases.length; ri++) {
+    const release = releases[ri];
     const data = allData[ri];
     const em = extractEmissions(data, '_all', release.defaultCdp);
     if (!em) continue;
@@ -560,11 +637,11 @@ function renderEmissionsComparison(canvasId, allData) {
       maintainAspectRatio: true,
       aspectRatio: 1.5,
       scales: {
-        x: { title: { display: true, text: 'Financial Year Starting' } },
+        x: { title: { display: true, text: 'Financial Year Starting' }, ticks: { maxRotation: 90, minRotation: 90 } },
         y: { title: { display: true, text: unit } },
       },
       plugins: {
-        tooltip: { mode: 'index', intersect: false },
+        tooltip: { mode: 'index', intersect: false, callbacks: tooltipCallbacks },
         legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } },
       },
       interaction: { mode: 'index', intersect: false },
@@ -592,24 +669,47 @@ function resetChartCards(titles) {
 // UI wiring
 // ---------------------------------------------------------------------------
 
-function populateSelect(select, options) {
-  select.innerHTML = '';
+function populateTomSelect(ts, options) {
+  ts.clear(true);
+  ts.clearOptions();
   for (const opt of options) {
-    const el = document.createElement('option');
-    el.value = opt.value;
-    el.textContent = opt.label;
-    select.appendChild(el);
+    ts.addOption(opt);
   }
+  ts.refreshOptions(false);
+}
+
+function populatePathwayTomSelect(ts, pathways, cdpNames, odp) {
+  ts.clear(true);
+  ts.clearOptions();
+  // Detect ODP: from config, from cdp_names "(ODP)" marker, or from pathway key
+  let detectedOdp = odp;
+  for (const [key, desc] of Object.entries(cdpNames)) {
+    if (desc && desc.includes('(ODP)')) { detectedOdp = key; break; }
+  }
+  for (const p of pathways) {
+    const isOdp = p === detectedOdp || p.includes('(ODP)');
+    const normalizedKey = p.replace(/\s*\(ODP\)\s*/g, '').trim();
+    const desc = cdpNames[p] || cdpNames[normalizedKey] || '';
+    // Strip "(ODP)" from both display name and description
+    const cleanText = normalizedKey;
+    const cleanDesc = desc.replace(/\s*\(ODP\)\s*/g, '').trim();
+    ts.addOption({ value: p, text: cleanText, desc: cleanDesc, isOdp });
+  }
+  ts.refreshOptions(false);
 }
 
 function onReleaseChange() {
-  const release = RELEASES.find(r => r.id === selRelease.value);
-  populateSelect(selScenario, release.scenarios.map(s => ({
-    value: s, label: formatScenario(s),
+  const release = RELEASES.find(r => r.id === activeReleaseId);
+  populateTomSelect(tsScenario, release.scenarios.map(s => ({
+    value: s, text: formatScenario(s),
   })));
+  tsScenario.setValue(release.scenarios[0], true);
+
   // Reset pathway to default for this release
-  populateSelect(selPathway, [{ value: release.defaultCdp, label: release.defaultCdp }]);
-  selPathway.value = release.defaultCdp;
+  tsPathway.clear(true);
+  tsPathway.clearOptions();
+  tsPathway.addOption({ value: release.defaultCdp, text: release.defaultCdp, desc: '', isOdp: false });
+  tsPathway.setValue(release.defaultCdp, true);
 
   if (!compareMode) renderNormal();
 }
@@ -626,23 +726,80 @@ function onRegionChange() {
   if (!compareMode) renderNormal();
 }
 
-function onCompareToggle() {
-  compareMode = !compareMode;
-  btnCompare.classList.toggle('active', compareMode);
+function syncReleaseButtons() {
+  releaseBar.querySelectorAll('.release-btn').forEach(btn => {
+    const id = btn.dataset.release;
+    if (compareMode) {
+      if (id === 'ALL') {
+        btn.classList.add('active');
+      } else {
+        btn.classList.toggle('active', enabledReleases.has(id));
+      }
+    } else {
+      btn.classList.toggle('active', id === activeReleaseId);
+      // "All" button not active in normal mode
+      if (id === 'ALL') btn.classList.remove('active');
+    }
+  });
+}
 
-  // Toggle control visibility
-  selScenario.parentElement.style.display = compareMode ? 'none' : '';
-  selPathway.parentElement.style.display = compareMode ? 'none' : '';
-  selRegion.parentElement.style.display = compareMode ? 'none' : '';
+function enterCompareMode() {
+  compareMode = true;
+  activeReleaseId = null;
+  tsScenario.wrapper.closest('.control-group').style.display = 'none';
+  tsRegion.wrapper.closest('.control-group').style.display = 'none';
+  tsPathway.wrapper.closest('.controls-row').style.display = 'none';
+  syncReleaseButtons();
+  renderComparison();
+}
 
-  if (compareMode) {
+function exitCompareMode(releaseId) {
+  compareMode = false;
+  activeReleaseId = releaseId || RELEASES[0].id;
+  tsScenario.wrapper.closest('.control-group').style.display = '';
+  tsRegion.wrapper.closest('.control-group').style.display = '';
+  tsPathway.wrapper.closest('.controls-row').style.display = '';
+  resetChartCards(['Generation', 'Capacity', 'Emissions', 'Cost (NEM-wide)']);
+  document.getElementById('card-cost').style.display = '';
+  chartGrid.className = 'chart-grid';
+  syncReleaseButtons();
+  onReleaseChange();
+}
+
+function onReleaseBarClick(releaseId) {
+  if (releaseId === 'ALL') {
+    // Toggle compare mode on/off
+    if (compareMode) {
+      exitCompareMode(lastActiveReleaseId);
+    } else {
+      lastActiveReleaseId = activeReleaseId;
+      RELEASES.forEach(r => enabledReleases.add(r.id));
+      enterCompareMode();
+    }
+  } else if (compareMode) {
+    // Toggle individual release in compare mode
+    if (enabledReleases.has(releaseId)) {
+      // Don't allow disabling the last one
+      if (enabledReleases.size > 1) {
+        enabledReleases.delete(releaseId);
+      }
+    } else {
+      enabledReleases.add(releaseId);
+    }
+    syncReleaseButtons();
     renderComparison();
   } else {
-    resetChartCards(['Generation', 'Capacity', 'Emissions', 'Cost (NEM-wide)']);
-    document.getElementById('card-cost').style.display = '';
-    chartGrid.className = 'chart-grid';
-    renderNormal();
+    // Normal mode — mutually exclusive selection
+    activeReleaseId = releaseId;
+    syncReleaseButtons();
+    onReleaseChange();
   }
+}
+
+function releaseShortLabel(label) {
+  // "2026 ISP Draft" → "2026 Draft", "2024 ISP Final" → "2024"
+  const short = label.replace(' ISP ', ' ');
+  return short.replace(' Final', '');
 }
 
 // ---------------------------------------------------------------------------
@@ -654,10 +811,10 @@ function updateHash() {
   if (compareMode) {
     params.set('compare', 'true');
   } else {
-    params.set('release', selRelease.value);
-    params.set('scenario', selScenario.value);
-    params.set('pathway', selPathway.value);
-    params.set('region', selRegion.value);
+    params.set('release', activeReleaseId);
+    params.set('scenario', tsScenario.getValue());
+    params.set('pathway', tsPathway.getValue());
+    params.set('region', tsRegion.getValue());
   }
   history.replaceState(null, '', '#' + params.toString());
 }
@@ -678,56 +835,85 @@ function readHash() {
 // ---------------------------------------------------------------------------
 
 function init() {
-  // Populate release selector (2026 first = default)
-  populateSelect(selRelease, RELEASES.map(r => ({ value: r.id, label: r.label })));
-
-  // Populate region selector
-  populateSelect(selRegion, Object.entries(REGION_LABELS).map(([v, l]) => ({ value: v, label: l })));
-
-  // Read hash for initial state
   const hash = readHash();
 
-  if (hash.release && RELEASES.some(r => r.id === hash.release)) {
-    selRelease.value = hash.release;
-  }
-  // else default is first option = 2026_ISP_draft
+  // Build release button bar
+  const releaseLabel = document.createElement('label');
+  releaseLabel.className = 'release-bar-label';
+  releaseLabel.textContent = 'Report';
+  releaseBar.appendChild(releaseLabel);
 
-  const release = RELEASES.find(r => r.id === selRelease.value);
+  const allBtn = document.createElement('button');
+  allBtn.className = 'release-btn release-btn-all';
+  allBtn.dataset.release = 'ALL';
+  allBtn.textContent = 'All';
+  allBtn.addEventListener('click', () => onReleaseBarClick('ALL'));
+  releaseBar.appendChild(allBtn);
 
-  // Populate scenarios for selected release
-  populateSelect(selScenario, release.scenarios.map(s => ({
-    value: s, label: formatScenario(s),
-  })));
-  if (hash.scenario && release.scenarios.includes(hash.scenario)) {
-    selScenario.value = hash.scenario;
-  }
-
-  // Set initial pathway (will be updated after data loads)
-  populateSelect(selPathway, [{ value: release.defaultCdp, label: release.defaultCdp }]);
-  if (hash.pathway) {
-    // Add the hash pathway as an option temporarily; renderNormal will fix it
-    const opt = document.createElement('option');
-    opt.value = hash.pathway;
-    opt.textContent = hash.pathway;
-    selPathway.appendChild(opt);
-    selPathway.value = hash.pathway;
+  for (const r of RELEASES) {
+    const btn = document.createElement('button');
+    btn.className = 'release-btn';
+    btn.dataset.release = r.id;
+    btn.textContent = releaseShortLabel(r.label);
+    btn.addEventListener('click', () => onReleaseBarClick(r.id));
+    releaseBar.appendChild(btn);
   }
 
-  if (hash.region && REGION_LABELS[hash.region]) {
-    selRegion.value = hash.region;
+  // Set initial active release
+  if (hash.compare) {
+    activeReleaseId = null;
+  } else {
+    activeReleaseId = hash.release && RELEASES.some(r => r.id === hash.release)
+      ? hash.release : RELEASES[0].id;
   }
 
-  // Wire up events
-  selRelease.addEventListener('change', onReleaseChange);
-  selScenario.addEventListener('change', onScenarioChange);
-  selPathway.addEventListener('change', onPathwayChange);
-  selRegion.addEventListener('change', onRegionChange);
-  btnCompare.addEventListener('click', onCompareToggle);
+  const release = RELEASES.find(r => r.id === activeReleaseId) || RELEASES[0];
+
+  // Tom Select — Scenario (no search)
+  tsScenario = new TomSelect(selScenario, {
+    controlInput: null,
+    options: release.scenarios.map(s => ({ value: s, text: formatScenario(s) })),
+    items: [hash.scenario && release.scenarios.includes(hash.scenario) ? hash.scenario : release.scenarios[0]],
+    onChange: onScenarioChange,
+    onDropdownOpen: capDropdownHeight,
+  });
+
+  // Tom Select — CDP pathway (custom rendering for descriptions + ODP pill)
+  const initialCdp = hash.pathway || release.defaultCdp;
+  tsPathway = new TomSelect(selPathway, {
+    options: [{ value: initialCdp, text: initialCdp, desc: '', isOdp: false }],
+    items: [initialCdp],
+    searchField: ['text', 'desc'],
+    render: {
+      option: function(data, escape) {
+        const pill = data.isOdp ? '<span class="odp-pill">ODP</span>' : '';
+        const desc = data.desc ? '<span class="cdp-desc">' + escape(data.desc) + '</span>' : '';
+        return '<div>' + escape(data.text) + desc + pill + '</div>';
+      },
+      item: function(data, escape) {
+        const pill = data.isOdp ? ' <span class="odp-pill">ODP</span>' : '';
+        return '<div>' + escape(data.text) + pill + '</div>';
+      },
+    },
+    onChange: onPathwayChange,
+    onDropdownOpen: capDropdownHeight,
+  });
+
+  // Tom Select — Region (no search)
+  const regionOpts = Object.entries(REGION_LABELS).map(([v, l]) => ({ value: v, text: l }));
+  tsRegion = new TomSelect(selRegion, {
+    controlInput: null,
+    options: regionOpts,
+    items: [hash.region && REGION_LABELS[hash.region] ? hash.region : '_all'],
+    onChange: onRegionChange,
+    onDropdownOpen: capDropdownHeight,
+  });
 
   // Initial render
   if (hash.compare) {
-    onCompareToggle();
+    onReleaseBarClick('ALL');
   } else {
+    syncReleaseButtons();
     renderNormal();
   }
 }

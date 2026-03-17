@@ -2,7 +2,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: #f5f5f5;
   color: #1a1a1a;
   line-height: 1.5;
@@ -33,7 +33,12 @@ body {
   border-bottom: 1px solid #e0e0e0;
   padding: 0.75rem 1.5rem;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.controls-row {
+  display: flex;
+  flex-wrap: nowrap;
   gap: 0.6rem;
   align-items: center;
 }
@@ -62,23 +67,158 @@ body {
   border-color: #069FAF;
   box-shadow: 0 0 0 2px rgba(6, 159, 175, 0.2);
 }
-.btn-compare {
-  font-size: 0.82rem;
-  padding: 0.35rem 0.75rem;
-  border: 1px solid #069FAF;
-  border-radius: 4px;
-  background: #fff;
-  color: #069FAF;
-  cursor: pointer;
+
+/* Tom Select overrides */
+.control-group .ts-wrapper {
+  font-size: 0.85rem;
+  min-width: 140px;
+}
+.control-group-scenario {
+  flex: 1;
+}
+#sel-scenario + .ts-wrapper {
+  min-width: 200px;
+  flex: 1;
+}
+#sel-region + .ts-wrapper {
+  min-width: 80px;
+}
+.release-bar {
+  display: flex;
+  align-items: center;
+}
+.release-bar-label {
+  font-size: 0.78rem;
   font-weight: 600;
-  transition: background 0.15s, color 0.15s;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-right: 0.35rem;
 }
-.btn-compare:hover {
+.control-group-cdp {
+  flex: 1;
+}
+.control-group-cdp .ts-wrapper {
+  flex: 1;
+}
+.control-group .ts-wrapper .ts-control {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 0.3rem 1.4rem 0.3rem 0.5rem;
+  min-height: 0;
+  position: relative;
+}
+.control-group .ts-wrapper .ts-control::after {
+  content: '';
+  position: absolute;
+  right: 0.45rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid #888;
+  pointer-events: none;
+}
+.control-group .ts-wrapper.focus .ts-control {
+  border-color: #069FAF;
+  box-shadow: 0 0 0 2px rgba(6, 159, 175, 0.2);
+}
+.control-group .ts-wrapper .ts-dropdown {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  margin-top: 2px;
+  width: max-content;
+  min-width: 100%;
+  max-width: calc(100vw - 2rem);
+  max-height: 400px;
+  overflow-y: auto;
+}
+.control-group.control-group-cdp .ts-wrapper .ts-dropdown {
+  width: 100%;
+  max-width: 100%;
+  right: 0;
+}
+.control-group.control-group-cdp .ts-wrapper .ts-dropdown-content {
+  max-height: none;
+}
+.control-group .ts-wrapper .ts-dropdown .option {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+.control-group .ts-wrapper .ts-dropdown .option.active {
   background: #e6f7f9;
+  color: #1a1a1a;
 }
-.btn-compare.active {
+#sel-pathway-ts-dropdown .option {
+  line-height: 1.4;
+}
+
+/* ODP pill */
+.odp-pill {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   background: #069FAF;
   color: #fff;
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+
+/* CDP description in dropdown */
+.cdp-desc {
+  color: #777;
+  font-size: 0.78rem;
+  margin-left: 0.3rem;
+}
+/* Release button bar */
+.release-btn {
+  font-family: inherit;
+  font-size: 0.82rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid #ccc;
+  background: #fff;
+  color: #555;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+/* "All" button stands alone with gap */
+.release-btn-all {
+  border-radius: 4px;
+  margin-right: 0.5rem;
+}
+/* First release button after All gets left radius */
+.release-btn-all + .release-btn {
+  border-radius: 4px 0 0 4px;
+}
+.release-btn:last-child {
+  border-radius: 0 4px 4px 0;
+}
+.release-btn:not(.release-btn-all) + .release-btn:not(.release-btn-all) {
+  border-left: none;
+}
+.release-btn:hover {
+  background: #e6f7f9;
+  border-color: #069FAF;
+}
+.release-btn:not(.release-btn-all):hover + .release-btn {
+  border-left-color: #069FAF;
+}
+.release-btn.active {
+  background: #069FAF;
+  color: #fff;
+  border-color: #069FAF;
+}
+.release-btn.active:not(.release-btn-all) + .release-btn {
+  border-left-color: #069FAF;
 }
 
 /* Main content */
@@ -168,7 +308,7 @@ body {
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 950px) {
   .chart-grid,
   .chart-grid.compare-mode {
     grid-template-columns: 1fr;
@@ -176,7 +316,35 @@ body {
   .controls {
     padding: 0.5rem 1rem;
   }
+  .controls-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem;
+  }
+  .release-bar {
+    grid-column: 1 / -1;
+  }
+  .release-btn {
+    flex: 1;
+  }
+  .control-group-cdp {
+    grid-column: 1 / -1;
+  }
+  .control-group-scenario {
+    min-width: 0;
+  }
+  #sel-scenario + .ts-wrapper {
+    min-width: 0;
+  }
   .main {
     padding: 0.75rem 1rem 1.5rem;
+  }
+  .download-links {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.5rem;
+  }
+  .download-links a {
+    text-align: center;
   }
 }

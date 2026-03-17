@@ -1,10 +1,26 @@
 {
   "version": "4.2",
   "release": "2022_ISP_final",
-  "created_at": "2026-03-17T22:03:46+1100",
+  "created_at": "2026-03-18T02:04:28+1100",
   "messages": [
     "projections from AEMO's 2022_ISP_final generation outlooks"
   ],
+  "cdp_names": {
+    "CDP1": "Based on Progressive Change least-cost DP",
+    "CDP2": "Based on Step Change least-cost DP (Progressive Change least-cost with actionable ML and VNI West)",
+    "CDP3": "Based on Hydrogen Superpower least-cost DP",
+    "CDP4": "Based on Slow Change least-cost DP (Progressive Change without actionable Sydney Ring)",
+    "CDP5": "Progressive Change least-cost DP, with Marinus Link actionable",
+    "CDP6": "Progressive Change, with VNI West actionable",
+    "CDP7": "Progressive Change, without New England REZ Transmission Link actionable",
+    "CDP8": "Step Change, with HumeLink actionable",
+    "CDP9": "No actionable projects",
+    "CDP10": "Progressive Change least-cost DP, with actionable Marinus Link and VNI West staged",
+    "CDP11": "Progressive Change least-cost DP, with actionable Marinus Link, VNI West staged, and actionable HumeLink",
+    "CDP12": "Progressive Change least-cost DP, with actionable Marinus Link, and staged VNI West and HumeLink",
+    "CDP13": "Progressive Change least-cost DP with staged VNI West and HumeLink, but with Marinus Link not available",
+    "Counterfactual": "No future network augmentation other than committed and anticipated projects/ small intra-regional augmentations/ replacement expenditure projects"
+  },
   "data": [
     {
       "id": "au.nem.nsw1.fuel_tech.coal_black.energy.hydrogen_superpower.cdp2",
