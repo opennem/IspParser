@@ -1,10 +1,38 @@
 {
   "version": "4.2",
   "release": "2024_ISP_final",
-  "created_at": "2026-03-17T22:04:27+1100",
+  "created_at": "2026-03-18T02:05:36+1100",
   "messages": [
     "projections from AEMO's 2024_ISP_final generation outlooks"
   ],
+  "cdp_names": {
+    "CDP1": "Green Energy Exports least-cost",
+    "CDP2": "Progressive Change least-cost",
+    "CDP3": "Step Change least-cost",
+    "CDP4": "CDP3 without actionable Hunter Transmission Project",
+    "CDP5": "CDP3 without actionable Sydney Ring South",
+    "CDP6": "CDP3 without actionable Hunter Transmission Project nor Sydney Ring South",
+    "CDP7": "CDP3 without actionable HumeLink",
+    "CDP8": "CDP3 without actionable VNI West",
+    "CDP9": "CDP3 without actionable New England REZ Transmission Link 1 nor New England REZ Extension",
+    "CDP10": "CDP3 with actionable New England REZ Transmission Link 2",
+    "CDP11": "CDP3 without actionable New England REZ Extension",
+    "CDP12": "CDP3 without actionable Hunter-Central Coast REZ Network Infrastructure Project",
+    "CDP13": "CDP3 without actionable Project Marinus Stage 1",
+    "CDP14": "CDP3 with actionable Project Marinus Stage 2 (ODP)",
+    "CDP15": "CDP3 without actionable Waddamana to Palmerston transfer capability upgrade",
+    "CDP16": "CDP3 without actionable Mid North South Australia Extension",
+    "CDP17": "CDP3 with actionable Queensland SuperGrid North",
+    "CDP18": "CDP3 without actionable Queensland SuperGrid South",
+    "CDP19": "CDP3 without actionable Queensland SuperGrid South nor Gladstone Grid Reinforcement",
+    "CDP20": "CDP3 without actionable Queensland SuperGrid South nor actionable Sydney Ring South",
+    "CDP21": "CDP3 with actionable Project Marinus Stage 2, but without actionable Sydney Ring South",
+    "CDP22": "CDP3 without actionable QNI Connect",
+    "CDP23": "CDP3 with actionable Project Marinus Stage 2, but without actionable QNI Connect",
+    "CDP24": "CDP3 with actionable Project Marinus Stage 2, but without actionable Queensland SuperGrid South",
+    "CDP25": "No actionables",
+    "Counterfactual": "Counterfactual"
+  },
   "data": [
     {
       "id": "au.nem.nsw1.fuel_tech.coal_black.energy.step_change.cdp1",

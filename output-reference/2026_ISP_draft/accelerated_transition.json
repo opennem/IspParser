@@ -1,10 +1,36 @@
 {
   "version": "4.2",
   "release": "2026_ISP_draft",
-  "created_at": "2026-03-17T22:05:11+1100",
+  "created_at": "2026-03-18T02:06:30+1100",
   "messages": [
     "projections from AEMO's 2026_ISP_draft generation outlooks"
   ],
+  "cdp_names": {
+    "CDP1": "Least-cost DP for Slower Growth",
+    "CDP2": "Least-cost DP for Step Change",
+    "CDP3": "Least-cost DP for Accelerated Transition",
+    "CDP4": "CDP2 with actionable Switching Station Near Wondalga (ODP)",
+    "CDP5": "CDP4 with actionable Sydney Ring South 330kV upgrade",
+    "CDP6": "CDP4 with actionable Sydney Ring South 500kV upgrade",
+    "CDP7": "CDP4 with actionable Dubbo Distribution Project",
+    "CDP8": "CDP4 with actionable Central Queensland to Southern Queensland Expansion",
+    "CDP9": "CDP4 with actionable Eastern Victoria Reinforcement program (Option 1)",
+    "CDP10": "CDP4 with actionable Eastern Victoria Reinforcement program (Option 2)",
+    "CDP11": "CDP4 with actionable Northern Transmission Project",
+    "CDP12": "CDP4 without actionable Sydney Ring South power flow controller option and Sydney Ring North",
+    "CDP13": "CDP4 without actionable Sydney Ring North",
+    "CDP14": "CDP4 without actionable Gladstone Project",
+    "CDP15": "CDP4 without actionable Western Victoria Reinforcement program",
+    "CDP16": "CDP4 without actionable New England REZ Network Infrastructure Project Stage 1 and Queensland \u2013 New South Wales Interconnector (QNI) Connect",
+    "CDP17": "CDP4 without actionable Queensland \u2013 New South Wales Interconnector (QNI) Connect",
+    "CDP18": "CDP4 without actionable Gippsland offshore wind transmission stage 2 (Phase 2)",
+    "CDP19": "CDP4 without actionable Gippsland offshore wind transmission stage 1 and stage 2 (Phase 1)",
+    "CDP20": "CDP4 without actionable Waddamana to Palmerston Transfer Capacity Upgrade",
+    "CDP21": "CDP4 without actionable Project Marinus Stage 2",
+    "CDP22": "CDP4 without actionable Victoria \u2013 New South Wales Interconnector West (VNI West)",
+    "CDP23": "CDP4 with no non-anticipated actionable projects",
+    "Counterfactual": "No new projects"
+  },
   "data": [
     {
       "id": "au.nem.nsw1.fuel_tech.coal_black.energy.accelerated_transition.cdp1",

@@ -4,8 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ISP Workbook Parser — Chart Viewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2/dist/css/tom-select.css">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tom-select@2/dist/js/tom-select.complete.min.js"></script>
 </head>
 <body>
   <header class="site-header">
@@ -14,23 +19,23 @@
   </header>
 
   <div class="controls">
-    <div class="control-group">
-      <label for="sel-release">Release</label>
-      <select id="sel-release"></select>
+    <div class="controls-row">
+      <div class="release-bar" id="release-bar"></div>
+      <div class="control-group control-group-scenario">
+        <label for="sel-scenario">Scenario</label>
+        <select id="sel-scenario"></select>
+      </div>
+      <div class="control-group">
+        <label for="sel-region">Region</label>
+        <select id="sel-region"></select>
+      </div>
     </div>
-    <div class="control-group">
-      <label for="sel-scenario">Scenario</label>
-      <select id="sel-scenario"></select>
+    <div class="controls-row">
+      <div class="control-group control-group-cdp">
+        <label for="sel-pathway">CDP</label>
+        <select id="sel-pathway"></select>
+      </div>
     </div>
-    <div class="control-group">
-      <label for="sel-pathway">CDP</label>
-      <select id="sel-pathway"></select>
-    </div>
-    <div class="control-group">
-      <label for="sel-region">Region</label>
-      <select id="sel-region"></select>
-    </div>
-    <button class="btn-compare" id="btn-compare">Compare Releases</button>
   </div>
 
   <main class="main">
@@ -60,7 +65,9 @@
     <div class="downloads">
       <h3>Download Output Files</h3>
       <div class="download-links">
+        <a href="2022_ISP_draft.zip">2022_ISP_draft.zip</a>
         <a href="2022_ISP_final.zip">2022_ISP_final.zip</a>
+        <a href="2024_ISP_draft.zip">2024_ISP_draft.zip</a>
         <a href="2024_ISP_final.zip">2024_ISP_final.zip</a>
         <a href="2026_ISP_draft.zip">2026_ISP_draft.zip</a>
       </div>

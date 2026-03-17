@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
 """
-Generate verification charts from ISP JSON output files.
-
-Two modes:
-  1. Per-release: detailed technology breakdown charts for each region/scenario
-  2. Comparison: cross-release charts comparing step_change across ISP vintages
+Build ISP reference output: verification charts, zip archives, and index pages.
 
 Usage:
-    python generate_charts.py all        # everything
-    python generate_charts.py release 2026_ISP_draft
-    python generate_charts.py compare
+    python build.py all                     # everything
+    python build.py release 2026_ISP_draft  # single release charts
+    python build.py compare                 # cross-release comparison charts
+    python serve.py                          # local HTTP server for testing
 """
 
 import argparse
 import json
 import os
 import sys
+import zipfile
 
 import matplotlib
 matplotlib.use("Agg")
@@ -372,6 +370,22 @@ def generate_release_page(release_id, scenarios, cdp, odp, output_dir):
     print(f"  {md_path}")
 
 
+def create_release_zips(output_dir):
+    """Create a zip file for each release directory containing JSON files."""
+    for entry in sorted(os.listdir(output_dir)):
+        release_dir = os.path.join(output_dir, entry)
+        if not os.path.isdir(release_dir):
+            continue
+        json_files = [f for f in os.listdir(release_dir) if f.endswith(".json")]
+        if not json_files:
+            continue
+        zip_path = os.path.join(output_dir, f"{entry}.zip")
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            for jf in sorted(json_files):
+                zf.write(os.path.join(release_dir, jf), jf)
+        print(f"  {zip_path}")
+
+
 def generate_top_level_page(output_dir):
     """Generate the top-level index.md with comparison charts."""
     lines = [
@@ -413,9 +427,10 @@ def generate_top_level_page(output_dir):
     lines.append("")
     lines.append("## Downloads")
     lines.append("")
-    lines.append("- [2022 ISP Final (JSON)](2022_ISP_final.zip)")
-    lines.append("- [2024 ISP Final (JSON)](2024_ISP_final.zip)")
-    lines.append("- [2026 ISP Draft (JSON)](2026_ISP_draft.zip)")
+    for zf in sorted(os.listdir(output_dir)):
+        if zf.endswith(".zip"):
+            label = zf.replace(".zip", "").replace("_", " ").replace("ISP", "ISP")
+            lines.append(f"- [{label} (JSON)]({zf})")
     lines.append("")
 
     md_path = os.path.join(output_dir, "index.md")
@@ -488,6 +503,10 @@ def main():
 
         print("Generating comparison charts")
         generate_comparison_charts(json_base, os.path.join(script_dir, "comparison"))
+
+        print("Creating zip files")
+        create_release_zips(script_dir)
+
         generate_top_level_page(script_dir)
         print("\nDone.")
 
