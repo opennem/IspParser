@@ -56,9 +56,9 @@ Line styles: **solid** = 2026 ISP Draft, **dashed** = 2024 ISP, **dotted** = 202
 - [2024 ISP](2024_ISP_final/)
 - [2026 ISP Draft](2026_ISP_draft/)
 
-## Downloads
+## Download Output Files
 
-- [2022 ISP Final (JSON)](2022_ISP_final.zip)
-- [2024 ISP Final (JSON)](2024_ISP_final.zip)
-- [2026 ISP Draft (JSON)](2026_ISP_draft.zip)
+- [2022_ISP_final.zip](2022_ISP_final.zip)
+- [2024_ISP_final.zip](2024_ISP_final.zip)
+- [2026_ISP_draft.zip](2026_ISP_draft.zip)
 
