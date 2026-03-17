@@ -1,7 +1,8 @@
 .DS_Store
 output/
+site/
 
 # Ignore Excel temporary files
 ~*.xlsx
 
-output-reference/__pycache__/
+__pycache__/
