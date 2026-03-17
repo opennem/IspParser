@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ISP Workbook Parser — Chart Viewer</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+  <header class="site-header">
+    <h1>ISP Workbook Parser</h1>
+    <p>Interactive charts from AEMO Integrated System Plan workbooks</p>
+  </header>
+
+  <div class="controls">
+    <div class="control-group">
+      <label for="sel-release">Release</label>
+      <select id="sel-release"></select>
+    </div>
+    <div class="control-group">
+      <label for="sel-scenario">Scenario</label>
+      <select id="sel-scenario"></select>
+    </div>
+    <div class="control-group">
+      <label for="sel-pathway">CDP</label>
+      <select id="sel-pathway"></select>
+    </div>
+    <div class="control-group">
+      <label for="sel-region">Region</label>
+      <select id="sel-region"></select>
+    </div>
+    <button class="btn-compare" id="btn-compare">Compare Releases</button>
+  </div>
+
+  <main class="main">
+    <div class="chart-grid" id="chart-grid">
+      <div class="chart-card" id="card-energy">
+        <h3>Generation</h3>
+        <canvas id="chart-energy"></canvas>
+        <div class="loading-overlay hidden" id="load-energy"><div class="spinner"></div></div>
+      </div>
+      <div class="chart-card" id="card-capacity">
+        <h3>Capacity</h3>
+        <canvas id="chart-capacity"></canvas>
+        <div class="loading-overlay hidden" id="load-capacity"><div class="spinner"></div></div>
+      </div>
+      <div class="chart-card" id="card-emissions">
+        <h3>Emissions</h3>
+        <canvas id="chart-emissions"></canvas>
+        <div class="loading-overlay hidden" id="load-emissions"><div class="spinner"></div></div>
+      </div>
+      <div class="chart-card" id="card-cost">
+        <h3>Cost (NEM-wide)</h3>
+        <canvas id="chart-cost"></canvas>
+        <div class="loading-overlay hidden" id="load-cost"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <div class="downloads">
+      <h3>Download Output Files</h3>
+      <div class="download-links">
+        <a href="2022_ISP_final.zip">2022_ISP_final.zip</a>
+        <a href="2024_ISP_final.zip">2024_ISP_final.zip</a>
+        <a href="2026_ISP_draft.zip">2026_ISP_draft.zip</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
