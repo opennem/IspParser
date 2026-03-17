@@ -1,5 +1,7 @@
 ![logo](https://openelectricity.org.au/img/logo.svg)
 
+<a href="https://opennem.github.io/IspParser/#compare=true"><img src="docs/emissions-comparison.png" alt="Emissions Comparison" width="500"></a>
+
 **[View verification charts on GitHub Pages](https://opennem.github.io/IspParser/)**
 
 # ISP Workbook Parser
