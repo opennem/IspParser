@@ -4,3 +4,4 @@ output/
 # Ignore Excel temporary files
 ~*.xlsx
 
+output-reference/__pycache__/
