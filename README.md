@@ -8,6 +8,22 @@
 
 A Python script for generating JSON representations from AEMO's ISP Outlook (Excel) Workbooks.
 
+## Usage
+
+```bash
+python src/ispparser.py
+python src/ispparser.py --use-cache     # skip reprocessing if cached parquet files exist
+python src/ispparser.py --input /path/to/input --output /path/to/output
+python src/ispparser.py --config /path/to/report_config.json
+```
+
+| Flag | Default | Description |
+|---|---|---|
+| `--use-cache` | off | Skip reprocessing if cached parquet files exist |
+| `--input` | `input/` | Input folder containing ISP workbooks |
+| `--output` | `output/` | Output folder for generated files |
+| `--config` | `src/report_config.json` | Path to report config JSON |
+
 ## Output Files
 
 Each scenario in a release is output as a JSON file in the `output` folder corresponding to the release. The scenario file includes the capacity, energy, emissions and cost data for each development pathway, and each region (where available) and an `_all` region, being the sum of all regions.

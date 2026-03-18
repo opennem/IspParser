@@ -9,6 +9,7 @@ import numpy as np
 import json
 import pytz
 import zipfile
+import argparse
 from datetime import datetime
 
 # ---------------------------------------------------------------------------
@@ -27,161 +28,15 @@ OUTLOOKS_FOLDER = "outlooks"
 TIME_ZONE = pytz.timezone("Australia/Sydney")
 
 # ---------------------------------------------------------------------------
-# Fuel tech mappings
+# Report config
 # ---------------------------------------------------------------------------
 
-FUELTECH_MAPPINGS_2022 = {
-    "Brown Coal": "coal_brown",
-    "Black Coal": "coal_black",
-    "Solar Thermal": "solar_thermal",
-    "Utility-scale Solar": "solar_utility",
-    "Imports": "imports",
-    "Exports": "exports",
-    "Distributed PV": "solar_rooftop",
-    "Wind": "wind",
-    "Hydro": "hydro",
-    "Distributed Storage": "battery_distributed_discharging",
-    "Distributed Storage Load": "battery_distributed_charging",
-    "Mid-merit Gas": "gas_ccgt",
-    "Mid-merit Gas with CCS": "gas_ccgt_ccs",
-    "Offshore Wind": "wind_offshore",
-    "Peaking Gas\\+Liquids": "gas_ocgt",
-    "Hydrogen Turbine": "gas_hydrogen",
-    "Utility-scale Storage": "battery_discharging",
-    "Utility-scale Storage Load": "battery_charging",
-    "Coordinated DER Storage": "battery_VPP_discharging",
-    "Coordinated DER Storage Load": "battery_VPP_charging",
-    "DSP": "demand_response",
-}
+DEFAULT_CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "report_config.json")
 
-FUELTECH_MAPPINGS_2024_DRAFT = {
-    "Brown Coal": "coal_brown",
-    "Black Coal": "coal_black",
-    "Mid-merit Gas": "gas_ccgt",
-    "Mid-merit Gas with CCS": "gas_ccgt_ccs",
-    "Flexible Gas": "gas_ocgt",
-    "Offshore Wind": "wind_offshore",
-    "Wind": "wind",
-    "Hydro": "hydro",
-    "DSP": "demand_response",
-    "Imports": "imports",
-    "Exports": "exports",
-    "Distributed PV": "solar_rooftop",
-    "Utility-scale Solar": "solar_utility",
-    "Solar Thermal": "solar_thermal",
-    "Biomass": "bioenergy",
-    "Hydrogen Turbine": "gas_hydrogen",
-    "Utility-scale Storage": "battery_discharging",
-    "Utility-scale Storage Load": "battery_charging",
-    "Coordinated CER Storage": "battery_VPP_discharging",
-    "Coordinated CER Storage Load": "battery_VPP_charging",
-    "Passive CER Storage": "battery_distributed_discharging",
-    "Passive CER Storage Load": "battery_distributed_charging",
-}
-
-FUELTECH_MAPPINGS_2024 = {
-    "Brown coal": "coal_brown",
-    "Black coal": "coal_black",
-    "Mid-merit gas": "gas_ccgt",
-    "Flexible gas with CCS": "gas_ccgt_ccs",
-    "Flexible gas": "gas_ocgt",
-    "Offshore wind": "wind_offshore",
-    "Wind": "wind",
-    "Hydro": "hydro",
-    "DSP": "demand_response",
-    "Imports": "imports",
-    "Exports": "exports",
-    "Distributed PV": "solar_rooftop",
-    "Utility solar": "solar_utility",
-    "Utility storage": "battery_discharging",
-    "Utility storage load": "battery_charging",
-    "Coordinated CER storage": "battery_VPP_discharging",
-    "Coordinated CER storage load": "battery_VPP_charging",
-    "Passive CER storage": "battery_distributed_discharging",
-    "Passive CER storage load": "battery_distributed_charging",
-    "Other renewable fuels": "bioenergy",
-}
-
-FUELTECH_MAPPINGS_2026 = {
-    "Brown coal": "coal_brown",
-    "Black coal": "coal_black",
-    "Mid-merit gas": "gas_ccgt",
-    "Flexible gas with CCS": "gas_ccgt_ccs",
-    "Flexible gas": "gas_ocgt",
-    "Offshore wind": "wind_offshore",
-    "Wind": "wind",
-    "Hydro": "hydro",
-    "DSP": "demand_response",
-    "Imports": "imports",
-    "Exports": "exports",
-    "Rooftop and other small-scale solar": "solar_rooftop",
-    "Utility-scale solar": "solar_utility",
-    "Utility-scale storage": "battery_discharging",
-    "Utility-scale storage load": "battery_charging",
-    "Coordinated CER storage": "battery_VPP_discharging",
-    "Coordinated CER storage load": "battery_VPP_charging",
-    "Passive CER storage": "battery_distributed_discharging",
-    "Passive CER storage load": "battery_distributed_charging",
-    "Other renewable fuels": "bioenergy",
-}
-
-RELEASE_FUELTECH_MAPPINGS = {
-    "2022_ISP_draft": FUELTECH_MAPPINGS_2022,
-    "2022_ISP_final": FUELTECH_MAPPINGS_2022,
-    "2024_ISP_draft": FUELTECH_MAPPINGS_2024_DRAFT,
-    "2024_ISP_final": FUELTECH_MAPPINGS_2024,
-    "2026_ISP_draft": FUELTECH_MAPPINGS_2026,
-}
-
-# ---------------------------------------------------------------------------
-# Cost mappings
-# ---------------------------------------------------------------------------
-
-COST_MAPPINGS_2022 = {
-    "Generator Capital": "generator_capital",
-    "REZ Augmentation": "rez_augmentation",
-    "Flow Path Augmentation": "flow_path_augmentation",
-    "FOM": "fixed_operating_and_maintenance",
-    "Fuel": "fuel",
-    "VOM": "variable_operating_and_maintenance",
-    "DSP\\+USE": "dsp_use",
-}
-
-COST_MAPPINGS_2024 = {
-    "Generator capital": "generator_capital",
-    "FOM": "fixed_operating_and_maintenance",
-    "Fuel": "fuel",
-    "VOM": "variable_operating_and_maintenance",
-    "DSP\\+USE": "dsp_use",
-    "REZ augmentation": "rez_augmentation",
-    "Flow path augmentation": "flow_path_augmentation",
-    "Emissions cost": "emissions_cost",
-}
-
-COST_MAPPINGS_2026 = {
-    "Generation, storage and electrolyser capital costs": "generator_capital",
-    "Generation, storage and electrolyser FOM costs": "fixed_operating_and_maintenance",
-    "Generation, storage and electrolyser VOM costs": "variable_operating_and_maintenance",
-    "Generation, storage and electrolyser retirement costs": "generator_retirement",
-    "Fuel costs": "fuel",
-    "DSP\\+USE costs": "dsp_use",
-    "Emissions costs": "emissions_cost",
-    "REZ capital costs": "rez_capital",
-    "REZ O&M costs": "rez_operations_and_maintenance",
-    "Flow path capital costs": "flow_path_capital",
-    "Flow path O&M costs": "flow_path_operations_and_maintenance",
-    "Distribution capital costs": "distribution_capital",
-    "Distribution O&M costs": "distribution_operations_and_maintenance",
-    "System security costs": "system_security",
-}
-
-RELEASE_COST_MAPPINGS = {
-    "2022_ISP_draft": COST_MAPPINGS_2022,
-    "2022_ISP_final": COST_MAPPINGS_2022,
-    "2024_ISP_draft": COST_MAPPINGS_2022,
-    "2024_ISP_final": COST_MAPPINGS_2024,
-    "2026_ISP_draft": COST_MAPPINGS_2026,
-}
+def loadReportConfig(config_path=None):
+    config_file = config_path or DEFAULT_CONFIG_PATH
+    with open(config_file) as f:
+        return json.load(f)
 
 # ---------------------------------------------------------------------------
 # Integrity checks
@@ -279,14 +134,12 @@ def renameRegions(frame):
 
 
 def renameTechnologyLabels(frame, fueltech_mappings):
-    for old_label, new_label in fueltech_mappings.items():
-        frame['Technology'] = frame['Technology'].replace(r'^{}$'.format(old_label), new_label, regex=True)
+    frame['Technology'] = frame['Technology'].replace(fueltech_mappings)
     return frame
 
 
 def renameCostLabels(frame, cost_mappings):
-    for old_label, new_label in cost_mappings.items():
-        frame['Technology'] = frame['Technology'].replace(r'^{}$'.format(old_label), new_label, regex=True)
+    frame['Technology'] = frame['Technology'].replace(cost_mappings)
     return frame
 
 
@@ -441,16 +294,12 @@ def check_dataframe_compatibility(dataframes):
             raise ValueError(f"ERROR: The column names of {ref_name} and {test_frame.name} are not identical.")
 
 
-def getWorkbookData(release_id, file_name, label):
+def getWorkbookData(release_id, file_name, label, release_config):
     workbook_path = os.path.join(INPUT_FOLDER, release_id, file_name)
     print(f"\nloading release '{release_id}', scenario '{label}' from '{workbook_path}'")
 
-    fueltech_mappings = RELEASE_FUELTECH_MAPPINGS.get(release_id)
-    cost_mappings = RELEASE_COST_MAPPINGS.get(release_id)
-    if fueltech_mappings is None:
-        raise ValueError(f"ERROR: no fueltech mappings defined for release '{release_id}'")
-    if cost_mappings is None:
-        raise ValueError(f"ERROR: no cost mappings defined for release '{release_id}'")
+    fueltech_mappings = release_config["fueltech_mappings"]
+    cost_mappings = release_config["cost_mappings"]
 
     excel_file = openpyxl.load_workbook(workbook_path)
 
@@ -481,23 +330,17 @@ def getWorkbookData(release_id, file_name, label):
     costs.insert(1, 'Region', 'nem')
     costs = costs.rename(columns={"Category": "Technology"})
 
-    if release_id in ('2022_ISP_final', '2022_ISP_draft'):
-        print("INFO: removing column 'Existing and Committed' from capacities")
-        capacities.drop(columns=['Existing and Committed'], inplace=True)
+    for col in release_config.get("capacity_columns_to_drop", []):
+        print(f"INFO: removing column '{col}' from capacities")
+        capacities.drop(columns=[col], inplace=True)
 
-    if release_id == '2024_ISP_final':
-        capacities.drop(columns=['2023-24'], inplace=True)
-
-    if release_id == '2024_ISP_draft':
-        capacities.drop(columns=[2024], inplace=True)
-
-    if release_id == '2026_ISP_draft':
-        capacities.drop(columns=['2025-26'], inplace=True)
-
-    if release_id == '2024_ISP_draft':
+    if release_config.get("cdp_strip_odp", False):
         for frame in [capacities, generation, flows, emissions, costs]:
             frame['CDP'] = frame['CDP'].str.replace(r'\s*\(ODP\)', '', regex=True)
-            frame.drop(frame[frame['CDP'] == 'Least-cost DP'].index, inplace=True)
+
+    for cdp_val in release_config.get("cdp_drop_values", []):
+        for frame in [capacities, generation, flows, emissions, costs]:
+            frame.drop(frame[frame['CDP'] == cdp_val].index, inplace=True)
 
     for frame in [capacities, generation, flows, emissions, costs]:
         renameFinancialYearColumns(frame)
@@ -538,32 +381,17 @@ def getWorkbookData(release_id, file_name, label):
     return combined
 
 
-def loadScenariosList(release_name):
-    index_file = os.path.join(INPUT_FOLDER, release_name, "scenarios.json")
-    if not os.path.exists(index_file):
-        raise ValueError(f"ERROR: the scenario index file '{index_file}' does not exist.")
-
-    with open(index_file) as f:
-        scenario_files = json.load(f)
-
-    if len(scenario_files) == 0:
-        raise ValueError(f"ERROR: the scenarios list from '{index_file}' is empty.")
-
-    return scenario_files
-
-
-def processGenerationOutlookFiles(release_id):
+def processGenerationOutlookFiles(release_id, release_config):
     combined_data = pd.DataFrame()
     num_files_processed = 0
 
-    scenario_files = loadScenariosList(release_id)
-    for file_info in scenario_files:
+    for file_info in release_config["scenarios"]:
         if num_files_processed >= MAX_FILES_TO_PROCESS:
             break
 
         scenario_label = file_info["label"]
         file_name = file_info['file_name']
-        outlook_data = getWorkbookData(release_id, file_name, scenario_label)
+        outlook_data = getWorkbookData(release_id, file_name, scenario_label, release_config)
 
         combined_data = pd.concat([combined_data, outlook_data], ignore_index=True)
         num_files_processed += 1
@@ -571,13 +399,13 @@ def processGenerationOutlookFiles(release_id):
     return combined_data
 
 
-def processAndCacheOutlooks(filename_parquet, release_name):
-    if os.path.exists(filename_parquet):
-        print(f"WARNING: '{filename_parquet}' exists, skipping processing and will used cached version")
+def processAndCacheOutlooks(filename_parquet, release_name, release_config, use_cache=False):
+    if use_cache and os.path.exists(filename_parquet):
+        print(f"INFO: '{filename_parquet}' exists, using cached version (--use-cache)")
         return
 
     print(f"\nINFO: processing ISP outlook workbooks for release '{release_name}'")
-    combined_data = processGenerationOutlookFiles(release_name)
+    combined_data = processGenerationOutlookFiles(release_name, release_config)
 
     runIntegrityChecks(combined_data)
 
@@ -587,7 +415,7 @@ def processAndCacheOutlooks(filename_parquet, release_name):
     frame_copy.to_parquet(filename_parquet)
 
 
-def loadGenerationOutlooks(release_name):
+def loadGenerationOutlooks(release_name, release_config, use_cache=False):
     cache_path = os.path.join(OUTPUT_FOLDER, CACHE_FOLDER)
     if not os.path.exists(cache_path):
         print("creating cache directory")
@@ -595,7 +423,7 @@ def loadGenerationOutlooks(release_name):
 
     filename_parquet = os.path.join(cache_path, release_name + ".outlook.parquet")
 
-    processAndCacheOutlooks(filename_parquet, release_name)
+    processAndCacheOutlooks(filename_parquet, release_name, release_config, use_cache=use_cache)
 
     combined_data = pd.read_parquet(filename_parquet)
     renameYearColumnsFromStringToInteger(combined_data)
@@ -726,11 +554,10 @@ def writeNewJSON(root, outlooks, release, scenario, cdp_names=None):
         f.write(json_output)
 
 
-def writeNewJSONs(release):
-    outlooks = loadGenerationOutlooks(release)
+def writeNewJSONs(release, release_config, use_cache=False):
+    outlooks = loadGenerationOutlooks(release, release_config, use_cache=use_cache)
 
-    scenario_files = loadScenariosList(release)
-    cdp_names = getCdpNames(release, scenario_files[0]['file_name'])
+    cdp_names = getCdpNames(release, release_config["scenarios"][0]['file_name'])
     if cdp_names:
         print(f"INFO: extracted {len(cdp_names)} CDP names")
 
@@ -750,8 +577,20 @@ def writeNewJSONs(release):
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    writeNewJSONs("2022_ISP_draft")
-    writeNewJSONs("2022_ISP_final")
-    writeNewJSONs("2024_ISP_draft")
-    writeNewJSONs("2024_ISP_final")
-    writeNewJSONs("2026_ISP_draft")
+    parser = argparse.ArgumentParser(description="ISP Workbook Parser")
+    parser.add_argument("--use-cache", action="store_true",
+                        help="Use cached parquet files instead of reprocessing workbooks")
+    parser.add_argument("--input", default=INPUT_FOLDER,
+                        help=f"Input folder containing ISP workbooks (default: {INPUT_FOLDER})")
+    parser.add_argument("--output", default=OUTPUT_FOLDER,
+                        help=f"Output folder for generated files (default: {OUTPUT_FOLDER})")
+    parser.add_argument("--config", default=DEFAULT_CONFIG_PATH,
+                        help=f"Path to report config JSON (default: {DEFAULT_CONFIG_PATH})")
+    args = parser.parse_args()
+
+    INPUT_FOLDER = args.input
+    OUTPUT_FOLDER = args.output
+
+    config = loadReportConfig(config_path=args.config)
+    for release_id, release_config in config.items():
+        writeNewJSONs(release_id, release_config, use_cache=args.use_cache)
