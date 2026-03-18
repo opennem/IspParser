@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install pandas openpyxl numpy pytz
+      - run: pip install pandas openpyxl numpy pytz pyarrow
       - run: python src/ispparser.py
       - run: python src/build.py all
       - run: cp -a pages-template/. site/ && cp -a output/releases/. site/
