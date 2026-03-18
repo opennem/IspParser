@@ -46,8 +46,9 @@ body {
 }
 .header-left {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
 }
 .header-logo img {
   display: block;
@@ -57,11 +58,6 @@ body {
 .site-header h1 {
   font-size: 1.4rem;
   font-weight: 600;
-}
-.site-header p {
-  font-size: 0.85rem;
-  color: var(--color-text-subtle);
-  margin-top: 0.2rem;
 }
 .header-github {
   color: var(--color-text-subtle);
@@ -382,18 +378,29 @@ body {
     grid-template-columns: 1fr auto;
     gap: 0.5rem;
   }
-  /* Release bar: All button on its own row, rest wrap below */
+  /* Controls: not sticky on mobile */
+  .controls {
+    position: static;
+  }
+  /* Release bar: grid with 5 equal-width buttons per row */
   .release-bar {
     grid-column: 1 / -1;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
   }
   .release-btn-all {
+    grid-column: 1 / -1;
     width: 100%;
     margin-right: 0;
     margin-bottom: 0.35rem;
   }
   .release-btn:not(.release-btn-all) {
-    flex: 1;
+    width: 100%;
+    border-radius: 0;
+    border: 1px solid var(--color-border-input);
+    margin-left: -1px;
+    margin-top: -1px;
   }
   /* Scenario dropdown: truncate, don't wrap */
   .control-group-scenario {
