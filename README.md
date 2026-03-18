@@ -24,6 +24,7 @@ python src/ispparser.py --config /path/to/report_config.json
 | `--output` | `output/` | Output folder for generated files |
 | `--config` | `src/report_config.json` | Path to report config JSON |
 | `--max-to-process` | no limit | Max scenario workbooks to process per release |
+| `--no-concurrency` | off | Disable parallel processing, run workbooks sequentially |
 
 ## Output Files
 
@@ -31,47 +32,28 @@ Each scenario in a release is output as a JSON file in the `output` folder corre
 
 For example, the `step_change` scenario from the `2024 final ISP` release will be generated to `output/releases/2024_ISP_final/step_change.json`.
 
-### Download Output Files
-
-* [2022_ISP_draft.zip](site/2022_ISP_draft.zip)
-* [2022_ISP_final.zip](site/2022_ISP_final.zip)
-* [2024_ISP_draft.zip](site/2024_ISP_draft.zip)
-* [2024_ISP_final.zip](site/2024_ISP_final.zip)
-* [2026_ISP_draft.zip](site/2026_ISP_draft.zip)
-
 ## Supported ISP Releases
 
-#### 2022 ISP Draft
+| Release | Format | Year range | Scenarios | Download |
+|---|---|---|---|---|
+| 2018 ISP | 2018 | Calendar years | Neutral, Neutral with Storage, Fast, High DER, IRFG, Slow | [2018_ISP.zip](site/2018_ISP.zip) |
+| 2020 ISP Draft | 2020 | Calendar years | Central, Fast, High DER, Slow, Step | [2020_ISP_draft.zip](site/2020_ISP_draft.zip) |
+| 2020 ISP Final | 2020 | Calendar years | Central, Step Change, Slow Change (×8 DPs each) | [2020_ISP_final.zip](site/2020_ISP_final.zip) |
+| 2022 ISP Draft | standard | 2024–2051 (calendar) | Step Change, Hydrogen Superpower, Progressive Change, Slow Change | [2022_ISP_draft.zip](site/2022_ISP_draft.zip) |
+| 2022 ISP Final | standard | 2024–2051 (calendar) | Step Change, Hydrogen Superpower, Progressive Change, Slow Change | [2022_ISP_final.zip](site/2022_ISP_final.zip) |
+| 2024 ISP Draft | standard | 2025–2052 (calendar) | Step Change, Progressive Change, Green Energy Exports | [2024_ISP_draft.zip](site/2024_ISP_draft.zip) |
+| 2024 ISP Final | standard | 2024-25–2051-52 (financial) | Step Change, Green Energy Exports, Progressive Change | [2024_ISP_final.zip](site/2024_ISP_final.zip) |
+| 2026 ISP Draft | standard | 2026-27–2049-50 (financial) | Step Change, Accelerated Transition, Slower Growth | [2026_ISP_draft.zip](site/2026_ISP_draft.zip) |
 
-* all data in calendar years, from 2024 to 2051
-* capacity includes `Existing and Committed` column
-* includes emissions for NEM (which we map to `_all`)
+### Release notes
 
-#### 2022 ISP Final
-
-* all data in calendar years, from 2024 to 2051
-* capacity includes `Existing and Committed` column
-* includes emissions for NEM (which we map to `_all`)
-
-#### 2024 ISP Draft
-
-* all data in calendar years, from 2025 to 2052
-* capacity data as of 1 July in each year
-* CDP names normalised (`CDP11 (ODP)` → `CDP11`, `Least-cost DP` rows dropped)
-
-#### 2024 ISP Final
-
-* all data in _financial years_, from 2024-25 to 2051-52
-* introduces Subregions (collapsed during processing)
-* emissions per region
-
-#### 2026 ISP Draft
-
-* all data in _financial years_, from 2026-27 to 2049-50
-* 3 scenarios: Step Change, Accelerated Transition, Slower Growth
-* renamed technology labels (e.g. `Rooftop and other small-scale solar`)
-* new cost category labels (14 categories including retirement, distribution, system security)
-* 24 CDPs including Counterfactual
+- **2018 ISP** — First ISP. Single cost category (generation investment). No emissions data.
+- **2020 ISP Draft** — Introduces 8 cost categories (VOM, FOM, fuel, build, rehab, DSP+USE, REZ/IC transmission). Adds pumped hydro and VPP battery types.
+- **2020 ISP Final** — 3 scenarios × 8 development pathways = 24 workbooks.
+- **2022 ISP Draft / Final** — Calendar years 2024–2051. Adds offshore wind, hydrogen turbines, solar thermal, gas with CCS. Capacity includes "Existing and Committed" column. Emissions for NEM only (mapped to `_all`).
+- **2024 ISP Draft** — Calendar years 2025–2052. CDP names normalised (`CDP11 (ODP)` → `CDP11`, `Least-cost DP` rows dropped).
+- **2024 ISP Final** — First release using financial years. Introduces subregions (collapsed during processing) and per-region emissions. Adds emissions cost category.
+- **2026 ISP Draft** — Financial years 2026-27 to 2049-50. Renamed technology labels (e.g. `Rooftop and other small-scale solar`). 14 cost categories including retirement, distribution, system security. 24 CDPs including Counterfactual.
 
 ## Interactive Charts
 
