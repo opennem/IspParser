@@ -876,6 +876,7 @@ async function init() {
   // Tom Select — Scenario (no search)
   tsScenario = new TomSelect(selScenario, {
     controlInput: null,
+    dropdownParent: 'body',
     options: release.scenarios.map(s => ({ value: s, text: formatScenario(s) })),
     items: [hash.scenario && release.scenarios.includes(hash.scenario) ? hash.scenario : release.scenarios[0]],
     onChange: onScenarioChange,
@@ -885,18 +886,25 @@ async function init() {
   // Tom Select — CDP pathway (custom rendering for descriptions + ODP pill)
   const initialCdp = hash.pathway || 'default';
   tsPathway = new TomSelect(selPathway, {
+    dropdownParent: 'body',
     options: [{ value: initialCdp, text: initialCdp, desc: '', isOdp: false }],
     items: [initialCdp],
     searchField: ['text', 'desc'],
     render: {
       option: function(data, escape) {
-        const pill = data.isOdp ? '<span class="odp-pill">ODP</span>' : '';
+        const odpPill = data.isOdp ? '<span class="odp-pill">ODP</span>' : '';
+        const cdpLabel = data.isOdp
+          ? '<span class="cdp-pill">' + escape(data.text) + '</span>'
+          : escape(data.text);
         const desc = data.desc ? '<span class="cdp-desc">' + escape(data.desc) + '</span>' : '';
-        return '<div>' + escape(data.text) + desc + pill + '</div>';
+        return '<div class="cdp-option">' + cdpLabel + desc + odpPill + '</div>';
       },
       item: function(data, escape) {
-        const pill = data.isOdp ? ' <span class="odp-pill">ODP</span>' : '';
-        return '<div>' + escape(data.text) + pill + '</div>';
+        const odpPill = data.isOdp ? ' <span class="odp-pill">ODP</span>' : '';
+        const cdpLabel = data.isOdp
+          ? '<span class="cdp-pill">' + escape(data.text) + '</span>'
+          : escape(data.text);
+        return '<div class="cdp-item">' + cdpLabel + odpPill + '</div>';
       },
     },
     onChange: onPathwayChange,
@@ -907,6 +915,7 @@ async function init() {
   const regionOpts = Object.entries(REGION_LABELS).map(([v, l]) => ({ value: v, text: l }));
   tsRegion = new TomSelect(selRegion, {
     controlInput: null,
+    dropdownParent: 'body',
     options: regionOpts,
     items: [hash.region && REGION_LABELS[hash.region] ? hash.region : '_all'],
     onChange: onRegionChange,

@@ -180,7 +180,8 @@ body {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 2px var(--color-primary-ring);
 }
-.control-group .ts-wrapper .ts-dropdown {
+.control-group .ts-wrapper .ts-dropdown,
+.ts-wrapper .ts-dropdown {
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -190,26 +191,32 @@ body {
   max-width: calc(100vw - 2rem);
   max-height: 400px;
   overflow-y: auto;
+  z-index: 200;
 }
-.control-group.control-group-cdp .ts-wrapper .ts-dropdown {
+.control-group.control-group-cdp .ts-wrapper .ts-dropdown,
+#sel-pathway-ts-dropdown {
   width: 100%;
   max-width: 100%;
   right: 0;
 }
-.control-group.control-group-cdp .ts-wrapper .ts-dropdown-content {
+.control-group.control-group-cdp .ts-wrapper .ts-dropdown-content,
+#sel-pathway-ts-dropdown .ts-dropdown-content {
   max-height: none;
 }
-.control-group .ts-wrapper .ts-dropdown .option {
+.control-group .ts-wrapper .ts-dropdown .option,
+.ts-wrapper .ts-dropdown .option {
   padding: 0.5rem 0.75rem;
   font-size: 0.85rem;
   white-space: nowrap;
   line-height: 1.5;
 }
-.control-group .ts-wrapper .ts-dropdown .option.active {
+.control-group .ts-wrapper .ts-dropdown .option.active,
+.ts-wrapper .ts-dropdown .option.active {
   background: var(--color-primary-light);
   color: var(--color-text);
 }
-#sel-pathway-ts-dropdown .option {
+#sel-pathway-ts-dropdown .option,
+#sel-pathway-ts-dropdown .ts-dropdown .option {
   line-height: 1.4;
 }
 
@@ -228,11 +235,27 @@ body {
   vertical-align: middle;
 }
 
+/* CDP pill label (shown when ODP is present) */
+.cdp-pill {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: var(--color-border);
+  color: var(--color-text);
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+  vertical-align: middle;
+}
+.cdp-option, .cdp-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
 /* CDP description in dropdown */
 .cdp-desc {
   color: var(--color-text-desc);
   font-size: 0.78rem;
-  margin-left: 0.3rem;
 }
 /* Release button bar */
 .release-btn {
