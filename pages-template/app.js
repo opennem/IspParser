@@ -892,19 +892,13 @@ async function init() {
     searchField: ['text', 'desc'],
     render: {
       option: function(data, escape) {
-        const odpPill = data.isOdp ? '<span class="odp-pill">ODP</span>' : '';
-        const cdpLabel = data.isOdp
-          ? '<span class="cdp-pill">' + escape(data.text) + '</span>'
-          : escape(data.text);
+        const pillCls = 'cdp-pill' + (data.isOdp ? ' cdp-pill--odp' : '');
         const desc = data.desc ? '<span class="cdp-desc">' + escape(data.desc) + '</span>' : '';
-        return '<div class="cdp-option">' + cdpLabel + desc + odpPill + '</div>';
+        return '<div class="cdp-option"><span class="' + pillCls + '">' + escape(data.text) + '</span>' + desc + '</div>';
       },
       item: function(data, escape) {
-        const odpPill = data.isOdp ? ' <span class="odp-pill">ODP</span>' : '';
-        const cdpLabel = data.isOdp
-          ? '<span class="cdp-pill">' + escape(data.text) + '</span>'
-          : escape(data.text);
-        return '<div class="cdp-item">' + cdpLabel + odpPill + '</div>';
+        const pillCls = 'cdp-pill' + (data.isOdp ? ' cdp-pill--odp' : '');
+        return '<div class="cdp-item"><span class="' + pillCls + '">' + escape(data.text) + '</span></div>';
       },
     },
     onChange: onPathwayChange,
