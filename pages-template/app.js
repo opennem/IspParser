@@ -910,7 +910,6 @@ async function init() {
     options: regionOpts,
     items: [hash.region && REGION_LABELS[hash.region] ? hash.region : '_all'],
     onChange: onRegionChange,
-    onDropdownOpen: capDropdownHeight,
   });
 
   // Initial render
