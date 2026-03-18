@@ -405,7 +405,6 @@ body {
   /* Scenario dropdown: truncate, don't wrap */
   .control-group-scenario {
     min-width: 0;
-    overflow: hidden;
   }
   #sel-scenario + .ts-wrapper {
     min-width: 0;
