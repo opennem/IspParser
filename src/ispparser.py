@@ -30,12 +30,15 @@ TIME_ZONE = pytz.timezone("Australia/Sydney")
 _START_TIME = time.monotonic()
 _log_lock = None
 _worker_id = None
+_parallel_mode = False
 
 
 def log(msg):
     elapsed = time.monotonic() - _START_TIME
     if _worker_id is not None:
         line = f"[{elapsed:7.1f}s] [W{_worker_id}] {msg}"
+    elif _parallel_mode:
+        line = f"[{elapsed:7.1f}s] [M ] {msg}"
     else:
         line = f"[{elapsed:7.1f}s] {msg}"
     if _log_lock is not None:
@@ -730,6 +733,8 @@ def processGenerationOutlookFiles(release_id, release_config, max_to_process=Non
             log(f"INFO: processing {len(work_items)} workbooks sequentially (--no-concurrency)")
         results = [_process_single_workbook(item) for item in work_items]
     else:
+        global _parallel_mode
+        _parallel_mode = True
         lock = multiprocessing.Lock()
         max_workers = min(len(work_items), os.cpu_count() or 4)
         log(f"INFO: launching {len(work_items)} workers in parallel")
