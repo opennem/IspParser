@@ -16,14 +16,11 @@ from datetime import datetime
 # Constants
 # ---------------------------------------------------------------------------
 
-MAX_FILES_TO_PROCESS = 99
-
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 INPUT_FOLDER = os.path.join(PROJECT_ROOT, "input")
 OUTPUT_FOLDER = os.path.join(PROJECT_ROOT, "output")
 
 CACHE_FOLDER = "cache"
-OUTLOOKS_FOLDER = "outlooks"
 
 TIME_ZONE = pytz.timezone("Australia/Sydney")
 
@@ -381,12 +378,12 @@ def getWorkbookData(release_id, file_name, label, release_config):
     return combined
 
 
-def processGenerationOutlookFiles(release_id, release_config):
+def processGenerationOutlookFiles(release_id, release_config, max_to_process=None):
     combined_data = pd.DataFrame()
     num_files_processed = 0
 
     for file_info in release_config["scenarios"]:
-        if num_files_processed >= MAX_FILES_TO_PROCESS:
+        if max_to_process is not None and num_files_processed >= max_to_process:
             break
 
         scenario_label = file_info["label"]
@@ -399,13 +396,13 @@ def processGenerationOutlookFiles(release_id, release_config):
     return combined_data
 
 
-def processAndCacheOutlooks(filename_parquet, release_name, release_config, use_cache=False):
+def processAndCacheOutlooks(filename_parquet, release_name, release_config, use_cache=False, max_to_process=None):
     if use_cache and os.path.exists(filename_parquet):
         print(f"INFO: '{filename_parquet}' exists, using cached version (--use-cache)")
         return
 
     print(f"\nINFO: processing ISP outlook workbooks for release '{release_name}'")
-    combined_data = processGenerationOutlookFiles(release_name, release_config)
+    combined_data = processGenerationOutlookFiles(release_name, release_config, max_to_process=max_to_process)
 
     runIntegrityChecks(combined_data)
 
@@ -415,7 +412,7 @@ def processAndCacheOutlooks(filename_parquet, release_name, release_config, use_
     frame_copy.to_parquet(filename_parquet)
 
 
-def loadGenerationOutlooks(release_name, release_config, use_cache=False):
+def loadGenerationOutlooks(release_name, release_config, use_cache=False, max_to_process=None):
     cache_path = os.path.join(OUTPUT_FOLDER, CACHE_FOLDER)
     if not os.path.exists(cache_path):
         print("creating cache directory")
@@ -423,7 +420,7 @@ def loadGenerationOutlooks(release_name, release_config, use_cache=False):
 
     filename_parquet = os.path.join(cache_path, release_name + ".outlook.parquet")
 
-    processAndCacheOutlooks(filename_parquet, release_name, release_config, use_cache=use_cache)
+    processAndCacheOutlooks(filename_parquet, release_name, release_config, use_cache=use_cache, max_to_process=max_to_process)
 
     combined_data = pd.read_parquet(filename_parquet)
     renameYearColumnsFromStringToInteger(combined_data)
@@ -498,7 +495,7 @@ def buildNewJSON(outlooks, release, scenario, cdp_names=None):
 
     for i, row in outlooks.iterrows():
         if row['Scenario'] == scenario:
-            year_data = [round(x, 1) for x in row[pd.to_numeric(row.index, errors='coerce')>=2022].tolist()]
+            year_data = [round(x, 1) for x in row[years].tolist()]
 
             element = {
                 "id": generate_id(row),
@@ -554,8 +551,8 @@ def writeNewJSON(root, outlooks, release, scenario, cdp_names=None):
         f.write(json_output)
 
 
-def writeNewJSONs(release, release_config, use_cache=False):
-    outlooks = loadGenerationOutlooks(release, release_config, use_cache=use_cache)
+def writeNewJSONs(release, release_config, use_cache=False, max_to_process=None):
+    outlooks = loadGenerationOutlooks(release, release_config, use_cache=use_cache, max_to_process=max_to_process)
 
     cdp_names = getCdpNames(release, release_config["scenarios"][0]['file_name'])
     if cdp_names:
@@ -586,6 +583,8 @@ if __name__ == "__main__":
                         help=f"Output folder for generated files (default: {OUTPUT_FOLDER})")
     parser.add_argument("--config", default=DEFAULT_CONFIG_PATH,
                         help=f"Path to report config JSON (default: {DEFAULT_CONFIG_PATH})")
+    parser.add_argument("--max-to-process", type=int, default=None,
+                        help="Max number of scenario workbooks to process per release (default: no limit)")
     args = parser.parse_args()
 
     INPUT_FOLDER = args.input
@@ -593,4 +592,4 @@ if __name__ == "__main__":
 
     config = loadReportConfig(config_path=args.config)
     for release_id, release_config in config.items():
-        writeNewJSONs(release_id, release_config, use_cache=args.use_cache)
+        writeNewJSONs(release_id, release_config, use_cache=args.use_cache, max_to_process=args.max_to_process)

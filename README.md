@@ -23,6 +23,7 @@ python src/ispparser.py --config /path/to/report_config.json
 | `--input` | `input/` | Input folder containing ISP workbooks |
 | `--output` | `output/` | Output folder for generated files |
 | `--config` | `src/report_config.json` | Path to report config JSON |
+| `--max-to-process` | no limit | Max scenario workbooks to process per release |
 
 ## Output Files
 
