@@ -796,6 +796,7 @@ function updateHash() {
   const params = new URLSearchParams();
   if (compareMode) {
     params.set('compare', 'true');
+    params.set('releases', Array.from(enabledReleases).join(','));
   } else {
     params.set('release', activeReleaseId);
     params.set('scenario', tsScenario.getValue());
@@ -813,6 +814,7 @@ function readHash() {
     pathway: params.get('pathway'),
     region: params.get('region'),
     compare: params.get('compare') === 'true',
+    releases: params.get('releases') ? params.get('releases').split(',') : null,
   };
 }
 
@@ -892,19 +894,13 @@ async function init() {
     searchField: ['text', 'desc'],
     render: {
       option: function(data, escape) {
-        const odpPill = data.isOdp ? '<span class="odp-pill">ODP</span>' : '';
-        const cdpLabel = data.isOdp
-          ? '<span class="cdp-pill">' + escape(data.text) + '</span>'
-          : escape(data.text);
+        const pillCls = 'cdp-pill' + (data.isOdp ? ' cdp-pill--odp' : '');
         const desc = data.desc ? '<span class="cdp-desc">' + escape(data.desc) + '</span>' : '';
-        return '<div class="cdp-option">' + cdpLabel + desc + odpPill + '</div>';
+        return '<div class="cdp-option"><span class="' + pillCls + '">' + escape(data.text) + '</span>' + desc + '</div>';
       },
       item: function(data, escape) {
-        const odpPill = data.isOdp ? ' <span class="odp-pill">ODP</span>' : '';
-        const cdpLabel = data.isOdp
-          ? '<span class="cdp-pill">' + escape(data.text) + '</span>'
-          : escape(data.text);
-        return '<div class="cdp-item">' + cdpLabel + odpPill + '</div>';
+        const pillCls = 'cdp-pill' + (data.isOdp ? ' cdp-pill--odp' : '');
+        return '<div class="cdp-item"><span class="' + pillCls + '">' + escape(data.text) + '</span></div>';
       },
     },
     onChange: onPathwayChange,
@@ -923,7 +919,16 @@ async function init() {
 
   // Initial render
   if (hash.compare) {
-    onReleaseBarClick('ALL');
+    if (hash.releases) {
+      const valid = new Set(RELEASES.map(r => r.id));
+      const filtered = hash.releases.filter(id => valid.has(id));
+      if (filtered.length > 0) {
+        enabledReleases.clear();
+        filtered.forEach(id => enabledReleases.add(id));
+      }
+    }
+    lastActiveReleaseId = activeReleaseId;
+    enterCompareMode();
   } else {
     syncReleaseButtons();
     renderNormal();

@@ -220,24 +220,11 @@ body {
   line-height: 1.4;
 }
 
-/* ODP pill */
-.odp-pill {
-  display: inline-block;
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  background: var(--color-primary);
-  color: var(--color-surface);
-  padding: 0.1rem 0.4rem;
-  border-radius: 9999px;
-  margin-left: 0.4rem;
-  vertical-align: middle;
-}
-
-/* CDP pill label (shown when ODP is present) */
+/* CDP pill label */
 .cdp-pill {
   display: inline-block;
+  min-width: 3rem;
+  text-align: center;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -246,6 +233,11 @@ body {
   padding: 0.1rem 0.4rem;
   border-radius: 9999px;
   vertical-align: middle;
+  flex-shrink: 0;
+}
+.cdp-pill--odp {
+  background: var(--color-primary);
+  color: var(--color-surface);
 }
 .cdp-option, .cdp-item {
   display: flex;
