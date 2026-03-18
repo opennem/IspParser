@@ -14,6 +14,22 @@ body {
   color: #fff;
   padding: 1.25rem 1.5rem;
 }
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.header-logo img {
+  display: block;
+  height: 32px;
+  width: auto;
+}
 .site-header h1 {
   font-size: 1.4rem;
   font-weight: 600;
@@ -22,6 +38,14 @@ body {
   font-size: 0.85rem;
   color: #a0a0b8;
   margin-top: 0.2rem;
+}
+.header-github {
+  color: #a0a0b8;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+.header-github:hover {
+  color: #fff;
 }
 
 /* Control Bar */
@@ -321,27 +345,49 @@ body {
     grid-template-columns: 1fr auto;
     gap: 0.5rem;
   }
+  /* Release bar: All button on its own row, rest wrap below */
   .release-bar {
     grid-column: 1 / -1;
+    flex-wrap: wrap;
   }
-  .release-btn {
+  .release-btn-all {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 0.35rem;
+  }
+  .release-btn:not(.release-btn-all) {
     flex: 1;
+  }
+  /* Scenario dropdown: truncate, don't wrap */
+  .control-group-scenario {
+    min-width: 0;
+    overflow: hidden;
+  }
+  #sel-scenario + .ts-wrapper {
+    min-width: 0;
+    max-width: 100%;
+  }
+  #sel-scenario + .ts-wrapper .ts-control {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #sel-scenario + .ts-wrapper .ts-control > .item {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
   }
   .control-group-cdp {
     grid-column: 1 / -1;
   }
-  .control-group-scenario {
-    min-width: 0;
-  }
-  #sel-scenario + .ts-wrapper {
-    min-width: 0;
-  }
   .main {
     padding: 0.75rem 1rem 1.5rem;
   }
+  /* Download links: 2-column grid on mobile */
   .download-links {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 0.5rem;
   }
   .download-links a {
