@@ -826,11 +826,16 @@ async function init() {
   // Populate enabledReleases
   RELEASES.forEach(r => enabledReleases.add(r.id));
 
-  // Build release button bar
-  const releaseLabel = document.createElement('label');
-  releaseLabel.className = 'release-bar-label';
-  releaseLabel.textContent = 'Report';
-  releaseBar.appendChild(releaseLabel);
+  // Build download links from releases
+  const downloadNav = document.getElementById('download-links');
+  for (const r of RELEASES) {
+    const a = document.createElement('a');
+    a.href = `${r.id}.zip`;
+    a.textContent = `${r.id}.zip`;
+    downloadNav.appendChild(a);
+  }
+
+  // Build release button bar (legend already in HTML)
 
   const allBtn = document.createElement('button');
   allBtn.className = 'release-btn release-btn-all';

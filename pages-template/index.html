@@ -30,25 +30,27 @@
     </div>
   </header>
 
-  <div class="controls">
+  <form class="controls" role="search" aria-label="Chart filters" onsubmit="return false">
     <div class="controls-row">
-      <div class="release-bar" id="release-bar"></div>
-      <div class="control-group control-group-scenario">
-        <label for="sel-scenario">Scenario</label>
-        <select id="sel-scenario"></select>
-      </div>
-      <div class="control-group">
-        <label for="sel-region">Region</label>
-        <select id="sel-region"></select>
-      </div>
+      <fieldset class="release-bar" id="release-bar">
+        <legend class="release-bar-label">Report</legend>
+      </fieldset>
+      <fieldset class="control-group control-group-scenario">
+        <legend>Scenario</legend>
+        <select id="sel-scenario" aria-label="Scenario"></select>
+      </fieldset>
+      <fieldset class="control-group">
+        <legend>Region</legend>
+        <select id="sel-region" aria-label="Region"></select>
+      </fieldset>
     </div>
     <div class="controls-row">
-      <div class="control-group control-group-cdp">
-        <label for="sel-pathway">CDP</label>
-        <select id="sel-pathway"></select>
-      </div>
+      <fieldset class="control-group control-group-cdp">
+        <legend>CDP</legend>
+        <select id="sel-pathway" aria-label="CDP pathway"></select>
+      </fieldset>
     </div>
-  </div>
+  </form>
 
   <main class="main">
     <div class="chart-grid" id="chart-grid">
@@ -74,16 +76,10 @@
       </div>
     </div>
 
-    <div class="downloads">
+    <section class="downloads" id="downloads">
       <h3>Download Output Files</h3>
-      <div class="download-links">
-        <a href="2022_ISP_draft.zip">2022_ISP_draft.zip</a>
-        <a href="2022_ISP_final.zip">2022_ISP_final.zip</a>
-        <a href="2024_ISP_draft.zip">2024_ISP_draft.zip</a>
-        <a href="2024_ISP_final.zip">2024_ISP_final.zip</a>
-        <a href="2026_ISP_draft.zip">2026_ISP_draft.zip</a>
-      </div>
-    </div>
+      <nav class="download-links" id="download-links" aria-label="Download files"></nav>
+    </section>
   </main>
 
   <script src="app.js"></script>

@@ -1,17 +1,41 @@
 /* ISP Chart Viewer */
+
+:root {
+  --color-primary: #069FAF;
+  --color-primary-light: #e6f7f9;
+  --color-primary-ring: rgba(6, 159, 175, 0.2);
+  --color-bg: #f5f5f5;
+  --color-bg-dark: #1a1a2e;
+  --color-surface: #fff;
+  --color-text: #1a1a1a;
+  --color-text-muted: #555;
+  --color-text-heading: #333;
+  --color-text-subtle: #a0a0b8;
+  --color-text-desc: #777;
+  --color-border: #e0e0e0;
+  --color-border-input: #ccc;
+  --color-border-light: #ddd;
+  --color-chevron: #888;
+  --color-download-bg: #f0f0f0;
+  --color-download-hover: #e0e0e0;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: #f5f5f5;
-  color: #1a1a1a;
+  background: var(--color-bg);
+  color: var(--color-text);
   line-height: 1.5;
 }
 
 /* Header */
 .site-header {
-  background: #1a1a2e;
-  color: #fff;
+  background: var(--color-bg-dark);
+  color: var(--color-surface);
   padding: 1.25rem 1.5rem;
 }
 .header-inner {
@@ -36,16 +60,16 @@ body {
 }
 .site-header p {
   font-size: 0.85rem;
-  color: #a0a0b8;
+  color: var(--color-text-subtle);
   margin-top: 0.2rem;
 }
 .header-github {
-  color: #a0a0b8;
+  color: var(--color-text-subtle);
   transition: color 0.15s;
   flex-shrink: 0;
 }
 .header-github:hover {
-  color: #fff;
+  color: var(--color-surface);
 }
 
 /* Control Bar */
@@ -53,8 +77,8 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: #fff;
-  border-bottom: 1px solid #e0e0e0;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
   padding: 0.75rem 1.5rem;
   display: flex;
   flex-direction: column;
@@ -70,26 +94,33 @@ body {
   display: flex;
   align-items: center;
   gap: 0.35rem;
+  border: none;
+  padding: 0;
+  margin: 0;
 }
-.control-group label {
+.control-group label,
+.control-group legend {
   font-size: 0.78rem;
   font-weight: 600;
-  color: #555;
+  color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  padding: 0;
+  border: none;
+  float: left;
 }
 .control-group select {
   font-size: 0.85rem;
   padding: 0.35rem 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background: #fff;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
   cursor: pointer;
 }
 .control-group select:focus {
   outline: none;
-  border-color: #069FAF;
-  box-shadow: 0 0 0 2px rgba(6, 159, 175, 0.2);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-ring);
 }
 
 /* Tom Select overrides */
@@ -110,14 +141,20 @@ body {
 .release-bar {
   display: flex;
   align-items: center;
+  border: none;
+  padding: 0;
+  margin: 0;
 }
-.release-bar-label {
+.release-bar-label,
+.release-bar > legend {
   font-size: 0.78rem;
   font-weight: 600;
-  color: #555;
+  color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   margin-right: 0.35rem;
+  float: left;
+  padding: 0;
 }
 .control-group-cdp {
   flex: 1;
@@ -126,8 +163,8 @@ body {
   flex: 1;
 }
 .control-group .ts-wrapper .ts-control {
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
   padding: 0.3rem 1.4rem 0.3rem 0.5rem;
   min-height: 0;
   position: relative;
@@ -140,16 +177,16 @@ body {
   transform: translateY(-50%);
   border-left: 4px solid transparent;
   border-right: 4px solid transparent;
-  border-top: 5px solid #888;
+  border-top: 5px solid var(--color-chevron);
   pointer-events: none;
 }
 .control-group .ts-wrapper.focus .ts-control {
-  border-color: #069FAF;
-  box-shadow: 0 0 0 2px rgba(6, 159, 175, 0.2);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-ring);
 }
 .control-group .ts-wrapper .ts-dropdown {
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   margin-top: 2px;
   width: max-content;
@@ -173,8 +210,8 @@ body {
   line-height: 1.5;
 }
 .control-group .ts-wrapper .ts-dropdown .option.active {
-  background: #e6f7f9;
-  color: #1a1a1a;
+  background: var(--color-primary-light);
+  color: var(--color-text);
 }
 #sel-pathway-ts-dropdown .option {
   line-height: 1.4;
@@ -187,8 +224,8 @@ body {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  background: #069FAF;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   padding: 0.1rem 0.4rem;
   border-radius: 9999px;
   margin-left: 0.4rem;
@@ -197,7 +234,7 @@ body {
 
 /* CDP description in dropdown */
 .cdp-desc {
-  color: #777;
+  color: var(--color-text-desc);
   font-size: 0.78rem;
   margin-left: 0.3rem;
 }
@@ -206,9 +243,9 @@ body {
   font-family: inherit;
   font-size: 0.82rem;
   padding: 0.35rem 0.7rem;
-  border: 1px solid #ccc;
-  background: #fff;
-  color: #555;
+  border: 1px solid var(--color-border-input);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
   cursor: pointer;
   font-weight: 600;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
@@ -216,33 +253,33 @@ body {
 }
 /* "All" button stands alone with gap */
 .release-btn-all {
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   margin-right: 0.5rem;
 }
 /* First release button after All gets left radius */
 .release-btn-all + .release-btn {
-  border-radius: 4px 0 0 4px;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
 }
 .release-btn:last-child {
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 .release-btn:not(.release-btn-all) + .release-btn:not(.release-btn-all) {
   border-left: none;
 }
 .release-btn:hover {
-  background: #e6f7f9;
-  border-color: #069FAF;
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
 }
 .release-btn:not(.release-btn-all):hover + .release-btn {
-  border-left-color: #069FAF;
+  border-left-color: var(--color-primary);
 }
 .release-btn.active {
-  background: #069FAF;
-  color: #fff;
-  border-color: #069FAF;
+  background: var(--color-primary);
+  color: var(--color-surface);
+  border-color: var(--color-primary);
 }
 .release-btn.active:not(.release-btn-all) + .release-btn {
-  border-left-color: #069FAF;
+  border-left-color: var(--color-primary);
 }
 
 /* Main content */
@@ -259,8 +296,8 @@ body {
   gap: 1rem;
 }
 .chart-card {
-  background: #fff;
-  border-radius: 8px;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   padding: 1rem;
   position: relative;
@@ -269,7 +306,7 @@ body {
   font-size: 0.9rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
-  color: #333;
+  color: var(--color-text-heading);
 }
 .chart-card canvas {
   width: 100% !important;
@@ -288,14 +325,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   z-index: 10;
 }
 .loading-overlay.hidden { display: none; }
 .spinner {
   width: 28px; height: 28px;
-  border: 3px solid #e0e0e0;
-  border-top-color: #069FAF;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -305,7 +342,7 @@ body {
 .downloads {
   margin-top: 1.5rem;
   padding-top: 1rem;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--color-border);
 }
 .downloads h3 {
   font-size: 0.9rem;
@@ -320,15 +357,15 @@ body {
 .download-links a {
   font-size: 0.82rem;
   padding: 0.4rem 0.8rem;
-  background: #f0f0f0;
-  border-radius: 4px;
-  color: #1a1a1a;
+  background: var(--color-download-bg);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
   text-decoration: none;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border-light);
   transition: background 0.15s;
 }
 .download-links a:hover {
-  background: #e0e0e0;
+  background: var(--color-download-hover);
 }
 
 /* Responsive */
@@ -380,6 +417,19 @@ body {
   }
   .control-group-cdp {
     grid-column: 1 / -1;
+  }
+  /* Larger touch targets on mobile (+50% vertical padding) */
+  .release-btn {
+    padding-top: 0.525rem;
+    padding-bottom: 0.525rem;
+  }
+  .control-group .ts-wrapper .ts-control {
+    padding-top: 0.45rem;
+    padding-bottom: 0.45rem;
+  }
+  .download-links a {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
   }
   .main {
     padding: 0.75rem 1rem 1.5rem;
