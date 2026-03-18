@@ -276,6 +276,8 @@ function hexToRgba(hex, alpha) {
 }
 
 function makeStackedChart(canvasId, title, series, techList, divisor, unit) {
+  const existing = Chart.getChart(canvasId);
+  if (existing) existing.destroy();
   const ctx = document.getElementById(canvasId).getContext('2d');
   const datasets = [];
   let allYears = null;
@@ -323,6 +325,8 @@ function makeStackedChart(canvasId, title, series, techList, divisor, unit) {
 }
 
 function makeCostChart(canvasId, series, divisor, unit) {
+  const existing = Chart.getChart(canvasId);
+  if (existing) existing.destroy();
   const ctx = document.getElementById(canvasId).getContext('2d');
   const datasets = [];
   let allYears = null;
@@ -366,6 +370,8 @@ function makeCostChart(canvasId, series, divisor, unit) {
 }
 
 function makeEmissionsChart(canvasId, emData, divisor, unit) {
+  const existing = Chart.getChart(canvasId);
+  if (existing) existing.destroy();
   const ctx = document.getElementById(canvasId).getContext('2d');
   if (!emData) {
     const chart = new Chart(ctx, {
@@ -514,6 +520,8 @@ async function renderComparison() {
 }
 
 function renderComparisonChart(canvasId, type, releases, allData) {
+  const existing = Chart.getChart(canvasId);
+  if (existing) existing.destroy();
   const ctx = document.getElementById(canvasId).getContext('2d');
   const datasets = [];
   const groups = COMPARE_GROUPS[type];
@@ -572,6 +580,8 @@ function renderComparisonChart(canvasId, type, releases, allData) {
 }
 
 function renderEmissionsComparison(canvasId, releases, allData) {
+  const existing = Chart.getChart(canvasId);
+  if (existing) existing.destroy();
   const ctx = document.getElementById(canvasId).getContext('2d');
   const datasets = [];
   const divisor = TYPE_CONFIG.emissions.divisor;
