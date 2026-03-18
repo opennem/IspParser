@@ -4,12 +4,14 @@
 import pandas as pd
 import os
 import re
+import sys
 import numpy as np
 import json
 import pytz
 import zipfile
 import argparse
 import time
+import multiprocessing
 from datetime import datetime
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -26,10 +28,22 @@ CACHE_FOLDER = "cache"
 TIME_ZONE = pytz.timezone("Australia/Sydney")
 
 _START_TIME = time.monotonic()
+_log_lock = None
+_worker_id = None
+
 
 def log(msg):
     elapsed = time.monotonic() - _START_TIME
-    print(f"[{elapsed:7.1f}s] {msg}")
+    if _worker_id is not None:
+        line = f"[{elapsed:7.1f}s] [W{_worker_id}] {msg}"
+    else:
+        line = f"[{elapsed:7.1f}s] {msg}"
+    if _log_lock is not None:
+        with _log_lock:
+            sys.stdout.write(line + "\n")
+            sys.stdout.flush()
+    else:
+        print(line)
 
 # ---------------------------------------------------------------------------
 # Report config
@@ -666,9 +680,25 @@ def getWorkbookData(release_id, file_name, label, release_config, input_folder=N
 # Parallel workbook processing
 # ---------------------------------------------------------------------------
 
+def _init_worker(lock):
+    """Initialise the shared log lock in each worker process."""
+    global _log_lock
+    _log_lock = lock
+
+
+def _run_with_worker_id(worker_id, args):
+    """Wrapper that sets worker_id before processing a workbook."""
+    global _worker_id
+    _worker_id = worker_id
+    try:
+        return _process_single_workbook(args)
+    finally:
+        _worker_id = None
+
+
 def _process_single_workbook(args):
     """Worker function for ProcessPoolExecutor — processes one workbook."""
-    release_id, file_name, scenario_label, release_config, fmt, input_folder = args
+    release_id, file_name, scenario_label, release_config, fmt, input_folder = args[:6]
     if fmt == "2018":
         return getWorkbookData2018(release_id, file_name, scenario_label, release_config, input_folder=input_folder)
     elif fmt == "2020":
@@ -677,7 +707,7 @@ def _process_single_workbook(args):
         return getWorkbookData(release_id, file_name, scenario_label, release_config, input_folder=input_folder)
 
 
-def processGenerationOutlookFiles(release_id, release_config, max_to_process=None):
+def processGenerationOutlookFiles(release_id, release_config, max_to_process=None, no_concurrency=False):
     fmt = release_config.get("format", "standard")
     scenarios = release_config["scenarios"]
     total_scenarios = len(scenarios)
@@ -695,26 +725,32 @@ def processGenerationOutlookFiles(release_id, release_config, max_to_process=Non
             INPUT_FOLDER,
         ))
 
-    if len(work_items) == 1:
-        # No point spawning a pool for a single workbook
-        results = [_process_single_workbook(work_items[0])]
+    if no_concurrency or len(work_items) == 1:
+        if no_concurrency and len(work_items) > 1:
+            log(f"INFO: processing {len(work_items)} workbooks sequentially (--no-concurrency)")
+        results = [_process_single_workbook(item) for item in work_items]
     else:
+        lock = multiprocessing.Lock()
+        max_workers = min(len(work_items), os.cpu_count() or 4)
         log(f"INFO: launching {len(work_items)} workers in parallel")
-        with ProcessPoolExecutor(max_workers=min(len(work_items), os.cpu_count() or 4)) as executor:
-            futures = [executor.submit(_process_single_workbook, item) for item in work_items]
+        with ProcessPoolExecutor(max_workers=max_workers, initializer=_init_worker, initargs=(lock,)) as executor:
+            futures = [
+                executor.submit(_run_with_worker_id, idx, item)
+                for idx, item in enumerate(work_items, 1)
+            ]
             results = [f.result() for f in futures]
 
     combined_data = pd.concat(results, ignore_index=True)
     return combined_data
 
 
-def processAndCacheOutlooks(filename_parquet, release_name, release_config, use_cache=False, max_to_process=None):
+def processAndCacheOutlooks(filename_parquet, release_name, release_config, use_cache=False, max_to_process=None, no_concurrency=False):
     if use_cache and os.path.exists(filename_parquet):
         log(f"INFO: '{filename_parquet}' exists, using cached version (--use-cache)")
         return
 
     log(f"\nINFO: processing ISP outlook workbooks for release '{release_name}'")
-    combined_data = processGenerationOutlookFiles(release_name, release_config, max_to_process=max_to_process)
+    combined_data = processGenerationOutlookFiles(release_name, release_config, max_to_process=max_to_process, no_concurrency=no_concurrency)
 
     log(f"INFO: combined data has {len(combined_data)} rows and {len(combined_data.columns)} columns")
     runIntegrityChecks(combined_data)
@@ -725,7 +761,7 @@ def processAndCacheOutlooks(filename_parquet, release_name, release_config, use_
     frame_copy.to_parquet(filename_parquet)
 
 
-def loadGenerationOutlooks(release_name, release_config, use_cache=False, max_to_process=None):
+def loadGenerationOutlooks(release_name, release_config, use_cache=False, max_to_process=None, no_concurrency=False):
     cache_path = os.path.join(OUTPUT_FOLDER, CACHE_FOLDER)
     if not os.path.exists(cache_path):
         log("creating cache directory")
@@ -733,7 +769,7 @@ def loadGenerationOutlooks(release_name, release_config, use_cache=False, max_to
 
     filename_parquet = os.path.join(cache_path, release_name + ".outlook.parquet")
 
-    processAndCacheOutlooks(filename_parquet, release_name, release_config, use_cache=use_cache, max_to_process=max_to_process)
+    processAndCacheOutlooks(filename_parquet, release_name, release_config, use_cache=use_cache, max_to_process=max_to_process, no_concurrency=no_concurrency)
 
     combined_data = pd.read_parquet(filename_parquet)
     renameYearColumnsFromStringToInteger(combined_data)
@@ -866,8 +902,8 @@ def writeNewJSON(root, outlooks, release, scenario, cdp_names=None):
         f.write(json_output)
 
 
-def writeNewJSONs(release, release_config, use_cache=False, max_to_process=None):
-    outlooks = loadGenerationOutlooks(release, release_config, use_cache=use_cache, max_to_process=max_to_process)
+def writeNewJSONs(release, release_config, use_cache=False, max_to_process=None, no_concurrency=False):
+    outlooks = loadGenerationOutlooks(release, release_config, use_cache=use_cache, max_to_process=max_to_process, no_concurrency=no_concurrency)
 
     cdp_names = getCdpNames(release, release_config["scenarios"][0]['file_name'])
     if cdp_names:
@@ -901,6 +937,8 @@ if __name__ == "__main__":
                         help=f"Path to report config JSON (default: {DEFAULT_CONFIG_PATH})")
     parser.add_argument("--max-to-process", type=int, default=None,
                         help="Max number of scenario workbooks to process per release (default: no limit)")
+    parser.add_argument("--no-concurrency", action="store_true",
+                        help="Disable parallel processing and run workbooks sequentially")
     args = parser.parse_args()
 
     INPUT_FOLDER = args.input
@@ -913,4 +951,4 @@ if __name__ == "__main__":
         log(f"\n{'='*60}")
         log(f"INFO: processing release '{release_id}' ({idx} of {len(releases)})")
         log(f"{'='*60}")
-        writeNewJSONs(release_id, release_config, use_cache=args.use_cache, max_to_process=args.max_to_process)
+        writeNewJSONs(release_id, release_config, use_cache=args.use_cache, max_to_process=args.max_to_process, no_concurrency=args.no_concurrency)
