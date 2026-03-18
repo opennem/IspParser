@@ -796,6 +796,7 @@ function updateHash() {
   const params = new URLSearchParams();
   if (compareMode) {
     params.set('compare', 'true');
+    params.set('releases', Array.from(enabledReleases).join(','));
   } else {
     params.set('release', activeReleaseId);
     params.set('scenario', tsScenario.getValue());
@@ -813,6 +814,7 @@ function readHash() {
     pathway: params.get('pathway'),
     region: params.get('region'),
     compare: params.get('compare') === 'true',
+    releases: params.get('releases') ? params.get('releases').split(',') : null,
   };
 }
 
@@ -917,7 +919,16 @@ async function init() {
 
   // Initial render
   if (hash.compare) {
-    onReleaseBarClick('ALL');
+    if (hash.releases) {
+      const valid = new Set(RELEASES.map(r => r.id));
+      const filtered = hash.releases.filter(id => valid.has(id));
+      if (filtered.length > 0) {
+        enabledReleases.clear();
+        filtered.forEach(id => enabledReleases.add(id));
+      }
+    }
+    lastActiveReleaseId = activeReleaseId;
+    enterCompareMode();
   } else {
     syncReleaseButtons();
     renderNormal();
