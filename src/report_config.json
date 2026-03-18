@@ -1,4 +1,146 @@
 {
+    "2018_ISP": {
+        "format": "2018",
+        "scenarios": [
+            {"label": "Neutral", "file_name": "2018 Generation Outlook - Neutral Scenario.xlsx"},
+            {"label": "Neutral with Storage", "file_name": "2018 Generation Outlook - Neutral with Storage Scenario.xlsx"},
+            {"label": "Fast", "file_name": "2018 Generation Outlook - Fast Scenario.xlsx"},
+            {"label": "High DER", "file_name": "2018 Generation Outlook - HighDER Scenario.xlsx"},
+            {"label": "IRFG", "file_name": "2018 Generation Outlook - IRFG Scenario.xlsx"},
+            {"label": "Slow", "file_name": "2018 Generation Outlook - Slow Scenario.xlsx"}
+        ],
+        "fueltech_mappings": {
+            "Black coal": "coal_black",
+            "Brown coal": "coal_brown",
+            "Hydro": "hydro",
+            "CCGT": "gas_ccgt",
+            "Peaking gas + liquids": "gas_ocgt",
+            "Wind": "wind",
+            "Utility Solar": "solar_utility",
+            "Utility storage": "battery_discharging",
+            "Utility storage generation": "battery_discharging",
+            "Utility storage load": "battery_charging",
+            "Biomass": "bioenergy",
+            "Distributed storage": "battery_distributed_discharging",
+            "Distributed storage generation": "battery_distributed_discharging",
+            "Distributed storage load": "battery_distributed_charging",
+            "Rooftop PV": "solar_rooftop"
+        },
+        "cost_mappings": {
+            "Generation Investment": "generation_investment"
+        },
+        "capacity_columns_to_drop": [],
+        "cdp_strip_odp": false,
+        "cdp_drop_values": []
+    },
+    "2020_ISP_draft": {
+        "format": "2020",
+        "scenarios": [
+            {"label": "Central", "file_name": "AEMO ISP 2020 - Scenario Comparison_Central.xlsx"},
+            {"label": "Fast", "file_name": "AEMO ISP 2020 - Scenario Comparison_Fast.xlsx"},
+            {"label": "High DER", "file_name": "AEMO ISP 2020 - Scenario Comparison_High DER.xlsx"},
+            {"label": "Slow", "file_name": "AEMO ISP 2020 - Scenario Comparison_Slow.xlsx"},
+            {"label": "Step", "file_name": "AEMO ISP 2020 - Scenario Comparison_Step.xlsx"}
+        ],
+        "fueltech_mappings": {
+            "Black Coal": "coal_black",
+            "Brown Coal": "coal_brown",
+            "CCGT": "gas_ccgt",
+            "Peaking Gas+Liquids": "gas_ocgt",
+            "Wind": "wind",
+            "Solar": "solar_utility",
+            "Hydro": "hydro",
+            "DSP": "demand_response",
+            "Distributed PV": "solar_rooftop",
+            "Large-scale Battery": "battery_discharging",
+            "Large-scale Battery Load": "battery_charging",
+            "VPP Battery": "battery_VPP_discharging",
+            "VPP Battery Load": "battery_VPP_charging",
+            "Pumped Hydro": "pumped_hydro_discharging",
+            "Pumped Hydro Load": "pumped_hydro_charging",
+            "Other Behind the Meter Battery": "battery_distributed_discharging"
+        },
+        "cost_mappings": {
+            "VOM": "variable_operating_and_maintenance",
+            "FOM": "fixed_operating_and_maintenance",
+            "Fuel": "fuel",
+            "Build": "generator_capital",
+            "Rehab": "generator_retirement",
+            "DSP+USE": "dsp_use",
+            "REZ Transmission": "rez_augmentation",
+            "IC Transmission": "flow_path_augmentation"
+        },
+        "cost_sheet_map": {
+            "VOMCost_2": "VOM",
+            "FOMCost_2": "FOM",
+            "FuelCost_2": "Fuel",
+            "BuildCost_2": "Build",
+            "REHABCost_2": "Rehab",
+            "DSPCost_2": "DSP+USE",
+            "REZTxCost_2": "REZ Transmission",
+            "ICTxCost_2": "IC Transmission"
+        },
+        "capacity_columns_to_drop": ["Existing+Committed in 2021"],
+        "cdp_strip_odp": false,
+        "cdp_drop_values": []
+    },
+    "2020_ISP_final": {
+        "format": "2020",
+        "scenarios": [
+            {"label": "Central", "file_name": "AEMO ISP 2020 - Central (DP1).xlsx"},
+            {"label": "Central", "file_name": "AEMO ISP 2020 - Central (DP2).xlsx"},
+            {"label": "Central", "file_name": "AEMO ISP 2020 - Central (DP3).xlsx"},
+            {"label": "Central", "file_name": "AEMO ISP 2020 - Central (DP4).xlsx"},
+            {"label": "Central", "file_name": "AEMO ISP 2020 - Central (DP5).xlsx"},
+            {"label": "Central", "file_name": "AEMO ISP 2020 - Central (DP6).xlsx"},
+            {"label": "Central", "file_name": "AEMO ISP 2020 - Central (DP7).xlsx"},
+            {"label": "Central", "file_name": "AEMO ISP 2020 - Central (DP8).xlsx"},
+            {"label": "Step Change", "file_name": "AEMO ISP 2020 - Step Change (DP1).xlsx"},
+            {"label": "Step Change", "file_name": "AEMO ISP 2020 - Step Change (DP2).xlsx"},
+            {"label": "Step Change", "file_name": "AEMO ISP 2020 - Step Change (DP3).xlsx"},
+            {"label": "Step Change", "file_name": "AEMO ISP 2020 - Step Change (DP4).xlsx"},
+            {"label": "Step Change", "file_name": "AEMO ISP 2020 - Step Change (DP5).xlsx"},
+            {"label": "Step Change", "file_name": "AEMO ISP 2020 - Step Change (DP6).xlsx"},
+            {"label": "Step Change", "file_name": "AEMO ISP 2020 - Step Change (DP7).xlsx"},
+            {"label": "Step Change", "file_name": "AEMO ISP 2020 - Step Change (DP8).xlsx"},
+            {"label": "Slow Change", "file_name": "AEMO ISP 2020 - Slow Change (DP1).xlsx"},
+            {"label": "Slow Change", "file_name": "AEMO ISP 2020 - Slow Change (DP2).xlsx"},
+            {"label": "Slow Change", "file_name": "AEMO ISP 2020 - Slow Change (DP3).xlsx"},
+            {"label": "Slow Change", "file_name": "AEMO ISP 2020 - Slow Change (DP4).xlsx"},
+            {"label": "Slow Change", "file_name": "AEMO ISP 2020 - Slow Change (DP5).xlsx"},
+            {"label": "Slow Change", "file_name": "AEMO ISP 2020 - Slow Change (DP6).xlsx"},
+            {"label": "Slow Change", "file_name": "AEMO ISP 2020 - Slow Change (DP7).xlsx"},
+            {"label": "Slow Change", "file_name": "AEMO ISP 2020 - Slow Change (DP8).xlsx"}
+        ],
+        "fueltech_mappings": {
+            "Black Coal": "coal_black",
+            "Brown Coal": "coal_brown",
+            "CCGT": "gas_ccgt",
+            "Peaking Gas+Liquids": "gas_ocgt",
+            "Wind": "wind",
+            "Solar": "solar_utility",
+            "Hydro": "hydro",
+            "DSP": "demand_response",
+            "Distributed PV": "solar_rooftop",
+            "Dispatchable Storage": "battery_discharging",
+            "Dispatchable Storage Load": "battery_charging",
+            "Behind the Meter Storage": "battery_distributed_discharging",
+            "Behind the Meter Storage Load": "battery_distributed_charging"
+        },
+        "cost_mappings": {
+            "VOM": "variable_operating_and_maintenance",
+            "FOM": "fixed_operating_and_maintenance",
+            "Fuel": "fuel",
+            "Build": "generator_capital",
+            "Rehab": "generator_retirement",
+            "DSP+USE": "dsp_use",
+            "REZ Transmission": "rez_augmentation",
+            "IC Transmission": "flow_path_augmentation"
+        },
+        "capacity_columns_to_drop": ["Existing+Committed in 2021"],
+        "cdp_strip_odp": false,
+        "cdp_drop_values": []
+    },
     "2022_ISP_draft": {
         "scenarios": [
             {"label": "Step Change", "file_name": "2022 Draft ISP results workbook - Step Change.xlsx"},

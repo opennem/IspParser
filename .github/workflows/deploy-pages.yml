@@ -25,10 +25,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install pandas openpyxl matplotlib numpy pytz
+      - run: pip install pandas openpyxl numpy pytz
       - run: python src/ispparser.py
       - run: python src/build.py all
-      - run: cp -a pages-template/. site/
+      - run: cp -a pages-template/. site/ && cp -a output/releases/. site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

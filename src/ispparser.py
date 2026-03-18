@@ -131,6 +131,7 @@ def renameRegions(frame):
 
 
 def renameTechnologyLabels(frame, fueltech_mappings):
+    frame['Technology'] = frame['Technology'].str.strip()
     frame['Technology'] = frame['Technology'].replace(fueltech_mappings)
     return frame
 
@@ -169,6 +170,7 @@ def makeSpecialTechsPositive(frame):
         "battery_charging",
         "battery_VPP_charging",
         "battery_distributed_charging",
+        "pumped_hydro_charging",
         "exports",
     ]
 
@@ -212,6 +214,7 @@ def addSummaryRegion(df):
     trim_nem = nem_region[~nem_region['Technology'].isin(['imports', 'exports'])]
     trim_nem = trim_nem[~trim_nem['Type'].isin(['cost'])]
 
+    print(f"INFO: adding NEM summary region ({len(trim_nem)} rows added)")
     return pd.concat([df, trim_nem], ignore_index=True)
 
 # ---------------------------------------------------------------------------
@@ -232,7 +235,278 @@ def loadISPDataFromSheet(excel_file, sheetname):
         print(f"INFO: dropping {len(nan_cols)} empty trailing columns from '{sheetname}'")
         data = data.drop(columns=nan_cols)
 
+    print(f"INFO: loaded {len(data)} rows from '{sheetname}'")
     return data
+
+
+# ---------------------------------------------------------------------------
+# 2018 format loaders
+# ---------------------------------------------------------------------------
+
+def loadISPDataFromSheet2018(excel_file, sheetname):
+    """Load a sheet from a 2018 ISP workbook. Header at row 1, data from row 2."""
+    sheet = excel_file[sheetname]
+    data = pd.DataFrame(sheet.values)
+
+    data.columns = data.iloc[1]
+    data.drop([0, 1], inplace=True)
+    data.dropna(how="all", inplace=True)
+
+    # Remove repeat header rows
+    data = data[data.iloc[:, 0] != 'Region']
+
+    # Forward-fill Region
+    data['Region'] = data['Region'].ffill()
+
+    # Filter out Total rows and footnotes
+    tech_col = data.columns[1]
+    data = data[data[tech_col].notna()]
+    data = data[~data[tech_col].astype(str).str.contains('Total', na=False)]
+    data = data[~data[tech_col].astype(str).str.startswith('*', na=False)]
+
+    # Filter out NEM rows (will be recalculated by addSummaryRegion)
+    data = data[data['Region'] != 'NEM']
+
+    # Drop nan columns
+    nan_cols = [col for col in data.columns if col is None or (isinstance(col, float) and np.isnan(col))]
+    if nan_cols:
+        data = data.drop(columns=nan_cols)
+
+    print(f"INFO: loaded {len(data)} rows from '{sheetname}'")
+    return data
+
+
+def getWorkbookData2018(release_id, file_name, label, release_config):
+    workbook_path = os.path.join(INPUT_FOLDER, release_id, file_name)
+    print(f"\nloading release '{release_id}', scenario '{label}' from '{workbook_path}'")
+
+    fueltech_mappings = release_config["fueltech_mappings"]
+    cost_mappings = release_config.get("cost_mappings", {})
+
+    excel_file = openpyxl.load_workbook(workbook_path)
+
+    print("INFO: loading capacity (NEMInstalledCapacity Data)")
+    capacities = loadISPDataFromSheet2018(excel_file, 'NEMInstalledCapacity Data')
+
+    print("INFO: loading energy (NEMEnergyGenerated Data)")
+    energies = loadISPDataFromSheet2018(excel_file, 'NEMEnergyGenerated Data')
+
+    print("INFO: loading costs (GenerationInvestment)")
+    costs = loadCosts2018(excel_file)
+
+    # Add synthetic CDP (no development paths in 2018)
+    for frame in [capacities, energies, costs]:
+        frame.insert(0, 'CDP', 'default')
+
+    for frame in [capacities, energies, costs]:
+        renameFinancialYearColumns(frame)
+        changeNumericColumnsToFloats(frame)
+        renameRegions(frame)
+
+    energies.insert(1, "Type", "energy")
+    energies = renameTechnologyLabels(energies, fueltech_mappings)
+    makeSpecialTechsPositive(energies)
+
+    capacities.insert(1, "Type", "capacity")
+    capacities = renameTechnologyLabels(capacities, fueltech_mappings)
+    capacities['Technology'] = capacities['Technology'].apply(lambda x: x[:-12] if x.endswith("_discharging") else x)
+
+    costs.insert(1, "Type", "cost")
+    costs = renameCostLabels(costs, cost_mappings)
+
+    combined = pd.concat([energies, capacities, costs], ignore_index=True)
+    combined.insert(0, "Scenario", re.sub(r'\W+', '_', label.strip().lower()))
+
+    combined = addSummaryRegion(combined)
+
+    return combined
+
+
+def loadCosts2018(excel_file):
+    """Load GenerationInvestment sheet from 2018 workbook as a single cost category."""
+    sheet = excel_file['GenerationInvestment']
+    data = pd.DataFrame(sheet.values)
+
+    data.columns = data.iloc[1]
+    data.drop([0, 1], inplace=True)
+    data.dropna(how="all", inplace=True)
+
+    # Drop nan columns
+    nan_cols = [col for col in data.columns if col is None or (isinstance(col, float) and np.isnan(col))]
+    if nan_cols:
+        data = data.drop(columns=nan_cols)
+
+    # Filter out footnotes
+    data = data[~data['Region'].astype(str).str.startswith('*', na=False)]
+    data = data[data['Region'].notna()]
+
+    # Sum across regions to get NEM total
+    year_cols = [c for c in data.columns if c != 'Region']
+    for c in year_cols:
+        data[c] = pd.to_numeric(data[c], errors='coerce')
+    totals = data[year_cols].sum()
+
+    result = pd.DataFrame([totals])
+    result.insert(0, 'Technology', 'Generation Investment')
+    result.insert(0, 'Region', 'nem')
+
+    # Convert from $M to $000s
+    for c in year_cols:
+        result[c] = result[c] * 1000
+
+    print(f"INFO: loaded costs for {len(year_cols)} year columns")
+    return result
+
+
+# ---------------------------------------------------------------------------
+# 2020 format loaders
+# ---------------------------------------------------------------------------
+
+def loadISPDataFromSheet2020(excel_file, sheetname):
+    """Load a _2 sheet from a 2020 ISP workbook. Same header layout as 2022+."""
+    data = loadISPDataFromSheet(excel_file, sheetname)
+
+    # Keep only valid region rows (filter out totals, headers, footnotes)
+    valid_regions = {'NSW', 'QLD', 'VIC', 'SA', 'TAS'}
+    data = data[data['Region'].isin(valid_regions)]
+
+    print(f"INFO: loaded {len(data)} rows from '{sheetname}'")
+    return data
+
+
+def loadCosts2020(excel_file, cost_sheet_map):
+    """Load and combine 2020 cost sheets into a single costs DataFrame."""
+    cost_frames = []
+
+    for sheet_name, category_name in cost_sheet_map.items():
+        print(f"INFO: loading cost sheet '{sheet_name}' as '{category_name}'")
+        sheet = excel_file[sheet_name]
+        data = pd.DataFrame(sheet.values)
+
+        def parse_cost_col_header(x):
+            if isinstance(x, float):
+                return int(x)
+            if isinstance(x, str) and re.match(r"^\d{4}-\d{2}$", x):
+                return int("20" + x[5:])
+            return x
+        data.columns = data.iloc[2].apply(parse_cost_col_header)
+        data.drop([0, 1, 2], inplace=True)
+        data.dropna(how="all", inplace=True)
+
+        nan_cols = [col for col in data.columns if col is None or (isinstance(col, float) and np.isnan(col))]
+        if nan_cols:
+            data = data.drop(columns=nan_cols)
+
+        year_cols = [c for c in data.columns if isinstance(c, int)]
+
+        for c in year_cols:
+            data[c] = pd.to_numeric(data[c], errors='coerce').fillna(0)
+
+        # Filter to NEM rows if they exist, otherwise sum all rows
+        first_col = data.columns[0]
+        if 'NEM' in data[first_col].values:
+            data = data[data[first_col] == 'NEM']
+
+        # Sum year columns across all remaining rows, clamping rounding errors to zero
+        totals = data[year_cols].sum().clip(lower=0)
+        row = pd.DataFrame([totals])
+        row.insert(0, 'Technology', category_name)
+        row.insert(0, 'Region', 'nem')
+        cost_frames.append(row)
+
+    return pd.concat(cost_frames, ignore_index=True)
+
+
+def getWorkbookData2020(release_id, file_name, label, release_config):
+    workbook_path = os.path.join(INPUT_FOLDER, release_id, file_name)
+    print(f"\nloading release '{release_id}', scenario '{label}' from '{workbook_path}'")
+
+    fueltech_mappings = release_config["fueltech_mappings"]
+    cost_mappings = release_config.get("cost_mappings", {})
+
+    # Extract DP name from filename
+    dp_match = re.search(r'\(DP(\d+)\)', file_name)
+    cdp = f"DP{dp_match.group(1)}" if dp_match else "default"
+
+    excel_file = openpyxl.load_workbook(workbook_path, data_only=True)
+
+    print("INFO: loading capacity")
+    capacities = loadISPDataFromSheet2020(excel_file, 'Capacity_2')
+
+    print("INFO: loading generation")
+    generation = loadISPDataFromSheet2020(excel_file, 'Generation_2')
+
+    if 'Emissions_2' in excel_file.sheetnames:
+        print("INFO: loading emissions")
+        emissions_raw = loadISPDataFromSheet(excel_file, 'Emissions_2')
+        # Emissions sheet has 'Emissions' as first column, rename to Region
+        first_col = emissions_raw.columns[0]
+        emissions_raw = emissions_raw.rename(columns={first_col: 'Region'})
+        emissions_raw = emissions_raw[emissions_raw['Region'].notna()]
+        emissions_raw = emissions_raw[emissions_raw['Region'] != 'Region']
+        if 'Total' in emissions_raw.columns:
+            emissions_raw = emissions_raw.drop(columns=['Total'])
+        emissions_raw.insert(1, 'Technology', 'none')
+    else:
+        print("INFO: no Emissions_2 sheet found, skipping emissions")
+        emissions_raw = None
+
+    print("INFO: loading costs")
+    cost_sheet_map = release_config.get("cost_sheet_map", {
+        'VOMCost_2': 'VOM',
+        'FOMCost_2': 'FOM',
+        'FuelCost_2': 'Fuel',
+        'BuildCost_2': 'Build',
+        'RehabCost_2': 'Rehab',
+        'DSPCost_2': 'DSP+USE',
+        'REZTxCost_2': 'REZ Transmission',
+        'ICTxCost_2': 'IC Transmission',
+    })
+    costs = loadCosts2020(excel_file, cost_sheet_map)
+
+    # Drop capacity columns
+    for col in release_config.get("capacity_columns_to_drop", []):
+        if col in capacities.columns:
+            print(f"INFO: removing column '{col}' from capacities")
+            capacities.drop(columns=[col], inplace=True)
+
+    # Add CDP
+    frames = [capacities, generation, costs] + ([emissions_raw] if emissions_raw is not None else [])
+    for frame in frames:
+        frame.insert(0, 'CDP', cdp)
+
+    for frame in frames:
+        renameFinancialYearColumns(frame)
+        changeNumericColumnsToFloats(frame)
+        renameRegions(frame)
+
+    generation.insert(1, "Type", "energy")
+    generation = renameTechnologyLabels(generation, fueltech_mappings)
+    makeSpecialTechsPositive(generation)
+
+    capacities.insert(1, "Type", "capacity")
+    capacities = renameTechnologyLabels(capacities, fueltech_mappings)
+    capacities['Technology'] = capacities['Technology'].apply(lambda x: x[:-12] if x.endswith("_discharging") else x)
+
+    if emissions_raw is not None:
+        emissions_raw.insert(1, "Type", "emissions")
+        multiplyBy1e3(emissions_raw)
+
+    costs.insert(1, "Type", "cost")
+    costs = renameCostLabels(costs, cost_mappings)
+
+    # Emissions is NEM-only, so handle addSummaryRegion separately to avoid duplicates
+    non_emissions = pd.concat([generation, capacities, costs], ignore_index=True)
+    non_emissions.insert(0, "Scenario", re.sub(r'\W+', '_', label.strip().lower()))
+    non_emissions = addSummaryRegion(non_emissions)
+
+    if emissions_raw is not None:
+        emissions_raw.insert(0, "Scenario", re.sub(r'\W+', '_', label.strip().lower()))
+        combined = pd.concat([non_emissions, emissions_raw], ignore_index=True)
+    else:
+        combined = non_emissions
+
+    return combined
 
 
 def getCdpNames(release_id, file_name):
@@ -241,6 +515,7 @@ def getCdpNames(release_id, file_name):
     wb = openpyxl.load_workbook(workbook_path, read_only=True, data_only=True)
 
     if 'CDPs' not in wb.sheetnames:
+        print(f"INFO: no CDPs sheet found in '{file_name}'")
         wb.close()
         return {}
 
@@ -259,6 +534,7 @@ def getCdpNames(release_id, file_name):
             cdp_names[clean_key] = cell_b
 
     wb.close()
+    print(f"INFO: found {len(cdp_names)} CDP names in '{file_name}'")
     return cdp_names
 
 
@@ -382,13 +658,24 @@ def processGenerationOutlookFiles(release_id, release_config, max_to_process=Non
     combined_data = pd.DataFrame()
     num_files_processed = 0
 
+    fmt = release_config.get("format", "standard")
+    total_scenarios = len(release_config["scenarios"])
+    effective_total = min(total_scenarios, max_to_process) if max_to_process else total_scenarios
+    print(f"INFO: processing {effective_total} of {total_scenarios} scenario workbooks (format: {fmt})")
+
     for file_info in release_config["scenarios"]:
         if max_to_process is not None and num_files_processed >= max_to_process:
             break
 
         scenario_label = file_info["label"]
         file_name = file_info['file_name']
-        outlook_data = getWorkbookData(release_id, file_name, scenario_label, release_config)
+
+        if fmt == "2018":
+            outlook_data = getWorkbookData2018(release_id, file_name, scenario_label, release_config)
+        elif fmt == "2020":
+            outlook_data = getWorkbookData2020(release_id, file_name, scenario_label, release_config)
+        else:
+            outlook_data = getWorkbookData(release_id, file_name, scenario_label, release_config)
 
         combined_data = pd.concat([combined_data, outlook_data], ignore_index=True)
         num_files_processed += 1
@@ -404,6 +691,7 @@ def processAndCacheOutlooks(filename_parquet, release_name, release_config, use_
     print(f"\nINFO: processing ISP outlook workbooks for release '{release_name}'")
     combined_data = processGenerationOutlookFiles(release_name, release_config, max_to_process=max_to_process)
 
+    print(f"INFO: combined data has {len(combined_data)} rows and {len(combined_data.columns)} columns")
     runIntegrityChecks(combined_data)
 
     print(f"\nwriting to cache '{filename_parquet}'")
@@ -525,6 +813,8 @@ def buildNewJSON(outlooks, release, scenario, cdp_names=None):
 
             data.append(element)
 
+    print(f"INFO: generated {len(data)} data series for scenario '{scenario}'")
+
     output_obj = {
         "version": "4.2",
         "release": release,
@@ -567,6 +857,7 @@ def writeNewJSONs(release, release_config, use_cache=False, max_to_process=None)
 
     distro_file = os.path.join(OUTPUT_FOLDER, RELEASES_FOLDER, f"{release}.zip")
     zipdir(output_dir, distro_file)
+    print(f"INFO: created zip archive at '{distro_file}'")
 
 
 # ---------------------------------------------------------------------------
@@ -591,5 +882,10 @@ if __name__ == "__main__":
     OUTPUT_FOLDER = args.output
 
     config = loadReportConfig(config_path=args.config)
-    for release_id, release_config in config.items():
+    releases = list(config.items())
+    print(f"\nINFO: {len(releases)} releases to process")
+    for idx, (release_id, release_config) in enumerate(releases, 1):
+        print(f"\n{'='*60}")
+        print(f"INFO: processing release '{release_id}' ({idx} of {len(releases)})")
+        print(f"{'='*60}")
         writeNewJSONs(release_id, release_config, use_cache=args.use_cache, max_to_process=args.max_to_process)
