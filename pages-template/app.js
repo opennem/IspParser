@@ -11,43 +11,7 @@ Chart.defaults.scales.category = Chart.defaults.scales.category || {};
 // Constants (ported from build.py)
 // ---------------------------------------------------------------------------
 
-const RELEASES = [
-  {
-    id: '2022_ISP_draft',
-    label: '2022 ISP Draft',
-    scenarios: ['step_change', 'progressive_change', 'slow_change', 'hydrogen_superpower'],
-    defaultCdp: 'CDP2',
-    odp: 'CDP12',
-  },
-  {
-    id: '2022_ISP_final',
-    label: '2022 ISP Final',
-    scenarios: ['step_change', 'progressive_change', 'slow_change', 'hydrogen_superpower'],
-    defaultCdp: 'CDP2',
-    odp: 'CDP12',
-  },
-  {
-    id: '2024_ISP_draft',
-    label: '2024 ISP Draft',
-    scenarios: ['step_change', 'progressive_change', 'green_energy_exports'],
-    defaultCdp: 'CDP1',
-    odp: 'CDP11',
-  },
-  {
-    id: '2024_ISP_final',
-    label: '2024 ISP Final',
-    scenarios: ['step_change', 'progressive_change', 'green_energy_exports'],
-    defaultCdp: 'CDP1',
-    odp: 'CDP14',
-  },
-  {
-    id: '2026_ISP_draft',
-    label: '2026 ISP Draft',
-    scenarios: ['step_change', 'accelerated_transition', 'slower_growth'],
-    defaultCdp: 'CDP1',
-    odp: 'CDP4 (ODP)',
-  },
-];
+let RELEASES = []; // populated from releases.json at init
 
 const DETAIL_TECHS = {
   energy: [
@@ -104,13 +68,14 @@ const COMPARE_COLORS = {
   Solar: '#FECE00', Battery: '#3145CE', Hydro: '#41B6E6',
 };
 
-const COMPARE_DASHES = {
-  '2026_ISP_draft': [],
-  '2024_ISP_final': [8, 4],
-  '2024_ISP_draft': [8, 4],
-  '2022_ISP_final': [2, 4],
-  '2022_ISP_draft': [2, 4],
-};
+// Dash patterns cycle for comparison mode (newest first = solid)
+const DASH_PATTERNS = [[], [8, 4], [2, 4], [1, 3], [4, 2, 1, 2]];
+
+function getCompareDash(releaseId) {
+  // Releases are sorted oldest-first; newest gets solid line
+  const idx = RELEASES.length - 1 - RELEASES.findIndex(r => r.id === releaseId);
+  return DASH_PATTERNS[Math.min(idx, DASH_PATTERNS.length - 1)];
+}
 
 const COST_COLORS = {
   generator_capital:                      '#4E79A7',
@@ -149,7 +114,7 @@ const TYPE_CONFIG = {
 const cache = new Map();
 let charts = [];
 let compareMode = false;
-const enabledReleases = new Set(RELEASES.map(r => r.id));
+const enabledReleases = new Set();
 
 // DOM refs
 const selScenario = document.getElementById('sel-scenario');
@@ -268,6 +233,12 @@ async function loadData(releaseId, scenario) {
     }
     throw e;
   }
+}
+
+function pickDefaultPathway(pathways) {
+  if (pathways.includes('default')) return 'default';
+  if (pathways.includes('CDP1')) return 'CDP1';
+  return pathways[0];
 }
 
 function showFileError(msg) {
@@ -463,13 +434,11 @@ async function renderNormal() {
     const currentOptions = Object.keys(tsPathway.options);
     if (currentOptions.length !== pathways.length ||
         currentOptions[0] !== pathways[0]) {
-      populatePathwayTomSelect(tsPathway, pathways, cdpNames, release.odp);
+      populatePathwayTomSelect(tsPathway, pathways, cdpNames);
       if (pathways.includes(pathway)) {
         tsPathway.setValue(pathway, true);
-      } else if (pathways.includes(release.defaultCdp)) {
-        tsPathway.setValue(release.defaultCdp, true);
       } else {
-        tsPathway.setValue(pathways[0], true);
+        tsPathway.setValue(pickDefaultPathway(pathways), true);
       }
     }
 
@@ -522,8 +491,9 @@ async function renderComparison() {
   const activeReleases = RELEASES.filter(r => enabledReleases.has(r.id));
 
   try {
+    // Use the first scenario for each release in comparison mode
     const allData = await Promise.all(
-      activeReleases.map(r => loadData(r.id, 'step_change'))
+      activeReleases.map(r => loadData(r.id, r.scenarios[0]))
     );
 
     // Generation comparison
@@ -556,7 +526,8 @@ function renderComparisonChart(canvasId, type, releases, allData) {
   for (let ri = 0; ri < releases.length; ri++) {
     const release = releases[ri];
     const data = allData[ri];
-    const series = extractSeries(data, type, '_all', release.defaultCdp);
+    const pathways = getPathways(data);
+    const series = extractSeries(data, type, '_all', pickDefaultPathway(pathways));
 
     for (const [groupName, fuelTechs] of Object.entries(groups)) {
       const grouped = sumGroup(series, fuelTechs);
@@ -568,7 +539,7 @@ function renderComparisonChart(canvasId, type, releases, allData) {
         label: `${groupName} (${release.label})`,
         data: grouped.years.map((y, i) => ({ x: y.toString(), y: scaled[i] })),
         borderColor: COMPARE_COLORS[groupName],
-        borderDash: COMPARE_DASHES[release.id],
+        borderDash: getCompareDash(release.id),
         borderWidth: 2,
         pointRadius: 0,
         fill: false,
@@ -610,7 +581,8 @@ function renderEmissionsComparison(canvasId, releases, allData) {
   for (let ri = 0; ri < releases.length; ri++) {
     const release = releases[ri];
     const data = allData[ri];
-    const em = extractEmissions(data, '_all', release.defaultCdp);
+    const pathways = getPathways(data);
+    const em = extractEmissions(data, '_all', pickDefaultPathway(pathways));
     if (!em) continue;
     em.years.forEach(y => allYearsSet.add(y));
     const scaled = em.values.map(v => v / divisor);
@@ -619,7 +591,7 @@ function renderEmissionsComparison(canvasId, releases, allData) {
       label: release.label,
       data: em.years.map((y, i) => ({ x: y.toString(), y: scaled[i] })),
       borderColor: '#E15759',
-      borderDash: COMPARE_DASHES[release.id],
+      borderDash: getCompareDash(release.id),
       borderWidth: 2,
       pointRadius: 0,
       fill: false,
@@ -678,11 +650,11 @@ function populateTomSelect(ts, options) {
   ts.refreshOptions(false);
 }
 
-function populatePathwayTomSelect(ts, pathways, cdpNames, odp) {
+function populatePathwayTomSelect(ts, pathways, cdpNames) {
   ts.clear(true);
   ts.clearOptions();
-  // Detect ODP: from config, from cdp_names "(ODP)" marker, or from pathway key
-  let detectedOdp = odp;
+  // Detect ODP from cdp_names "(ODP)" marker or from pathway key
+  let detectedOdp = null;
   for (const [key, desc] of Object.entries(cdpNames)) {
     if (desc && desc.includes('(ODP)')) { detectedOdp = key; break; }
   }
@@ -690,7 +662,6 @@ function populatePathwayTomSelect(ts, pathways, cdpNames, odp) {
     const isOdp = p === detectedOdp || p.includes('(ODP)');
     const normalizedKey = p.replace(/\s*\(ODP\)\s*/g, '').trim();
     const desc = cdpNames[p] || cdpNames[normalizedKey] || '';
-    // Strip "(ODP)" from both display name and description
     const cleanText = normalizedKey;
     const cleanDesc = desc.replace(/\s*\(ODP\)\s*/g, '').trim();
     ts.addOption({ value: p, text: cleanText, desc: cleanDesc, isOdp });
@@ -703,13 +674,14 @@ function onReleaseChange() {
   populateTomSelect(tsScenario, release.scenarios.map(s => ({
     value: s, text: formatScenario(s),
   })));
-  tsScenario.setValue(release.scenarios[0], true);
+  const defaultScenario = release.scenarios.includes('step_change') ? 'step_change' : release.scenarios[0];
+  tsScenario.setValue(defaultScenario, true);
 
-  // Reset pathway to default for this release
+  // Reset pathway — will be populated from data in renderNormal
   tsPathway.clear(true);
   tsPathway.clearOptions();
-  tsPathway.addOption({ value: release.defaultCdp, text: release.defaultCdp, desc: '', isOdp: false });
-  tsPathway.setValue(release.defaultCdp, true);
+  tsPathway.addOption({ value: 'default', text: 'default', desc: '', isOdp: false });
+  tsPathway.setValue('default', true);
 
   if (!compareMode) renderNormal();
 }
@@ -755,7 +727,7 @@ function enterCompareMode() {
 
 function exitCompareMode(releaseId) {
   compareMode = false;
-  activeReleaseId = releaseId || RELEASES[0].id;
+  activeReleaseId = releaseId || RELEASES[RELEASES.length - 1].id;
   tsScenario.wrapper.closest('.control-group').style.display = '';
   tsRegion.wrapper.closest('.control-group').style.display = '';
   tsPathway.wrapper.closest('.controls-row').style.display = '';
@@ -797,9 +769,13 @@ function onReleaseBarClick(releaseId) {
 }
 
 function releaseShortLabel(label) {
-  // "2026 ISP Draft" → "2026 Draft", "2024 ISP Final" → "2024"
-  const short = label.replace(' ISP ', ' ');
-  return short.replace(' Final', '');
+  // "2024 ISP Draft" → "2024D", "2024 ISP Final" → "2024", "2018 ISP" → "2018"
+  const m = label.match(/^(\d{4})\s+ISP\s*(.*)/i);
+  if (!m) return label;
+  const year = m[1];
+  const suffix = m[2].trim().toLowerCase();
+  if (suffix === 'draft') return year + 'D';
+  return year;
 }
 
 // ---------------------------------------------------------------------------
@@ -834,8 +810,21 @@ function readHash() {
 // Init
 // ---------------------------------------------------------------------------
 
-function init() {
+async function init() {
   const hash = readHash();
+
+  // Load releases manifest
+  try {
+    const resp = await fetch('releases.json');
+    RELEASES = await resp.json();
+  } catch (e) {
+    console.error('Failed to load releases.json:', e);
+    showFileError('Could not load releases.json. Run: python3 src/build.py all');
+    return;
+  }
+
+  // Populate enabledReleases
+  RELEASES.forEach(r => enabledReleases.add(r.id));
 
   // Build release button bar
   const releaseLabel = document.createElement('label');
@@ -859,15 +848,15 @@ function init() {
     releaseBar.appendChild(btn);
   }
 
-  // Set initial active release
+  // Set initial active release (default to last = newest)
   if (hash.compare) {
     activeReleaseId = null;
   } else {
     activeReleaseId = hash.release && RELEASES.some(r => r.id === hash.release)
-      ? hash.release : RELEASES[0].id;
+      ? hash.release : RELEASES[RELEASES.length - 1].id;
   }
 
-  const release = RELEASES.find(r => r.id === activeReleaseId) || RELEASES[0];
+  const release = RELEASES.find(r => r.id === activeReleaseId) || RELEASES[RELEASES.length - 1];
 
   // Tom Select — Scenario (no search)
   tsScenario = new TomSelect(selScenario, {
@@ -879,7 +868,7 @@ function init() {
   });
 
   // Tom Select — CDP pathway (custom rendering for descriptions + ODP pill)
-  const initialCdp = hash.pathway || release.defaultCdp;
+  const initialCdp = hash.pathway || 'default';
   tsPathway = new TomSelect(selPathway, {
     options: [{ value: initialCdp, text: initialCdp, desc: '', isOdp: false }],
     items: [initialCdp],
