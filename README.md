@@ -25,12 +25,29 @@ python src/ispparser.py --config /path/to/report_config.json
 | `--config` | `src/report_config.json` | Path to report config JSON |
 | `--max-to-process` | no limit | Max scenario workbooks to process per release |
 | `--no-concurrency` | off | Disable parallel processing, run workbooks sequentially |
+| `--unified` | off | Generate a unified long-format parquet file combining all releases |
 
 ## Output Files
 
 Each scenario in a release is output as a JSON file in the `output` folder corresponding to the release. The scenario file includes the capacity, energy, emissions and cost data for each development pathway, and each region (where available) and an `_all` region, being the sum of all regions.
 
 For example, the `step_change` scenario from the `2024 final ISP` release will be generated to `output/releases/2024_ISP_final/step_change.json`.
+
+### Unified Parquet
+
+When `--unified` is passed, the parser also generates `output/all_isps.parquet` — a single long-format file combining all releases. This is published to GitHub Pages at [`all_isps.parquet`](https://opennem.github.io/IspParser/all_isps.parquet).
+
+| Column | Type | Description |
+|---|---|---|
+| Release | string | ISP publication ID (e.g. `2024_ISP_final`) |
+| Scenario | string | Scenario name (e.g. `step_change`) |
+| Type | string | `energy`, `capacity`, `emissions`, or `cost` |
+| CDP | string | Development pathway (e.g. `CDP1`, `default`) |
+| Region | string | `_all`, `nsw1`, `qld1`, `vic1`, `sa1`, `tas1` |
+| Technology | string | Normalised fuel tech or cost category |
+| Year | int16 | Projection year |
+| Value | float32 | Projection value |
+| Units | string | `GWh`, `MW`, `ktCO2e`, or `$000s` |
 
 ## Supported ISP Releases
 

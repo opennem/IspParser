@@ -26,9 +26,9 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install pandas openpyxl numpy pytz pyarrow python-calamine
-      - run: python src/ispparser.py
+      - run: python src/ispparser.py --unified
       - run: python src/build.py all
-      - run: cp -a pages-template/. site/ && cp -a output/releases/. site/
+      - run: cp -a pages-template/. site/ && cp -a output/releases/. site/ && cp output/all_isps.parquet site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

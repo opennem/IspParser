@@ -907,6 +907,31 @@ def writeNewJSON(root, outlooks, release, scenario, cdp_names=None):
         f.write(json_output)
 
 
+def buildUnifiedParquet(config, use_cache=False, max_to_process=None, no_concurrency=False):
+    """Build a single long-format parquet file combining all ISP releases."""
+    frames = []
+    for release_id, release_config in config.items():
+        log(f"INFO: loading release '{release_id}' for unified parquet")
+        outlooks = loadGenerationOutlooks(release_id, release_config, use_cache=use_cache, max_to_process=max_to_process, no_concurrency=no_concurrency)
+        years = getYearsFromColumnNames(outlooks)
+        meta_cols = [c for c in outlooks.columns if c not in years]
+
+        long = outlooks.melt(id_vars=meta_cols, value_vars=years, var_name='Year', value_name='Value')
+        long.insert(0, 'Release', release_id)
+        long['Units'] = long['Type'].map({
+            'energy': 'GWh', 'capacity': 'MW', 'emissions': 'ktCO2e', 'cost': '$000s'
+        })
+        long['Year'] = long['Year'].astype('int16')
+        long['Value'] = long['Value'].astype('float32')
+        frames.append(long)
+
+    unified = pd.concat(frames, ignore_index=True)
+    unified_path = os.path.join(OUTPUT_FOLDER, "all_isps.parquet")
+    unified.to_parquet(unified_path, index=False)
+    log(f"INFO: wrote unified parquet ({len(unified)} rows) to '{unified_path}'")
+    return unified_path
+
+
 def writeNewJSONs(release, release_config, use_cache=False, max_to_process=None, no_concurrency=False):
     outlooks = loadGenerationOutlooks(release, release_config, use_cache=use_cache, max_to_process=max_to_process, no_concurrency=no_concurrency)
 
@@ -944,6 +969,8 @@ if __name__ == "__main__":
                         help="Max number of scenario workbooks to process per release (default: no limit)")
     parser.add_argument("--no-concurrency", action="store_true",
                         help="Disable parallel processing and run workbooks sequentially")
+    parser.add_argument("--unified", action="store_true",
+                        help="Generate a unified long-format parquet file combining all releases")
     args = parser.parse_args()
 
     INPUT_FOLDER = args.input
@@ -957,3 +984,6 @@ if __name__ == "__main__":
         log(f"INFO: processing release '{release_id}' ({idx} of {len(releases)})")
         log(f"{'='*60}")
         writeNewJSONs(release_id, release_config, use_cache=args.use_cache, max_to_process=args.max_to_process, no_concurrency=args.no_concurrency)
+
+    if args.unified:
+        buildUnifiedParquet(config, use_cache=True, max_to_process=args.max_to_process, no_concurrency=args.no_concurrency)
