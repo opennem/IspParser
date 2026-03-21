@@ -10,6 +10,7 @@ import json
 import pytz
 import zipfile
 import argparse
+import glob
 import time
 import multiprocessing
 from datetime import datetime
@@ -406,6 +407,9 @@ def loadCosts2020(excel_file, cost_sheet_map):
     cost_frames = []
 
     for sheet_name, category_name in cost_sheet_map.items():
+        if sheet_name not in excel_file.sheet_names:
+            log(f"INFO: cost sheet '{sheet_name}' not found, skipping")
+            continue
         log(f"INFO: loading cost sheet '{sheet_name}' as '{category_name}'")
         data = readSheet(excel_file, sheet_name)
 
@@ -440,6 +444,8 @@ def loadCosts2020(excel_file, cost_sheet_map):
         row.insert(0, 'Region', 'nem')
         cost_frames.append(row)
 
+    if not cost_frames:
+        return pd.DataFrame()
     return pd.concat(cost_frames, ignore_index=True)
 
 
@@ -498,7 +504,12 @@ def getWorkbookData2020(release_id, file_name, label, release_config, input_fold
             capacities.drop(columns=[col], inplace=True)
 
     # Add CDP
-    frames = [capacities, generation, costs] + ([emissions_raw] if emissions_raw is not None else [])
+    has_costs = not costs.empty
+    frames = [capacities, generation]
+    if has_costs:
+        frames.append(costs)
+    if emissions_raw is not None:
+        frames.append(emissions_raw)
     for frame in frames:
         frame.insert(0, 'CDP', cdp)
 
@@ -519,11 +530,15 @@ def getWorkbookData2020(release_id, file_name, label, release_config, input_fold
         emissions_raw.insert(1, "Type", "emissions")
         multiplyBy1e3(emissions_raw)
 
-    costs.insert(1, "Type", "cost")
-    costs = renameCostLabels(costs, cost_mappings)
+    if has_costs:
+        costs.insert(1, "Type", "cost")
+        costs = renameCostLabels(costs, cost_mappings)
 
     # Emissions is NEM-only, so handle addSummaryRegion separately to avoid duplicates
-    non_emissions = pd.concat([generation, capacities, costs], ignore_index=True)
+    non_emissions_parts = [generation, capacities]
+    if has_costs:
+        non_emissions_parts.append(costs)
+    non_emissions = pd.concat(non_emissions_parts, ignore_index=True)
     non_emissions.insert(0, "Scenario", re.sub(r'\W+', '_', label.strip().lower()))
     non_emissions = addSummaryRegion(non_emissions)
 
@@ -697,6 +712,62 @@ def _run_with_worker_id(worker_id, args):
         return _process_single_workbook(args)
     finally:
         _worker_id = None
+
+
+def discoverUnconfiguredFiles(release_id, release_config):
+    """Find .xlsx files on disk not listed in the release's configured scenarios."""
+    configured = {s['file_name'] for s in release_config.get("scenarios", [])}
+    input_dir = os.path.join(INPUT_FOLDER, release_id)
+    all_files = glob.glob(os.path.join(input_dir, "*.xlsx"))
+
+    unconfigured = []
+    for path in sorted(all_files):
+        file_name = os.path.basename(path)
+        if file_name not in configured:
+            # Derive label from filename: take text after last " - ", strip extension
+            stem = os.path.splitext(file_name)[0]
+            parts = stem.split(" - ")
+            label = parts[-1].strip() if len(parts) > 1 else stem.strip()
+            unconfigured.append({"file_name": file_name, "label": label})
+
+    return unconfigured
+
+
+def processUnconfiguredFiles(release_id, release_config, no_concurrency=False):
+    """Process .xlsx files not in config, skipping any that fail to parse."""
+    extra_files = discoverUnconfiguredFiles(release_id, release_config)
+    if not extra_files:
+        return pd.DataFrame()
+
+    fmt = release_config.get("format", "standard")
+    log(f"INFO: found {len(extra_files)} unconfigured file(s) in '{release_id}': {[f['file_name'] for f in extra_files]}")
+
+    results = []
+    for file_info in extra_files:
+        work_item = (
+            release_id,
+            file_info['file_name'],
+            file_info['label'],
+            release_config,
+            fmt,
+            INPUT_FOLDER,
+        )
+        try:
+            df = _process_single_workbook(work_item)
+            results.append(df)
+            log(f"INFO: successfully parsed unconfigured file '{file_info['file_name']}' ({len(df)} rows)")
+        except Exception as e:
+            log(f"WARNING: skipping unconfigured file '{file_info['file_name']}': {e}")
+
+    if not results:
+        return pd.DataFrame()
+
+    combined = pd.concat(results, ignore_index=True)
+    try:
+        runIntegrityChecks(combined)
+    except Exception as e:
+        log(f"WARNING: integrity check on unconfigured data for '{release_id}': {e}")
+    return combined
 
 
 def _process_single_workbook(args):
@@ -907,12 +978,43 @@ def writeNewJSON(root, outlooks, release, scenario, cdp_names=None):
         f.write(json_output)
 
 
+def loadUnconfiguredOutlooks(release_id, release_config, use_cache=False, no_concurrency=False):
+    """Load unconfigured files for a release, using cache if available."""
+    cache_path = os.path.join(OUTPUT_FOLDER, CACHE_FOLDER)
+    os.makedirs(cache_path, exist_ok=True)
+    filename_parquet = os.path.join(cache_path, release_id + ".unconfigured.parquet")
+
+    if use_cache and os.path.exists(filename_parquet):
+        log(f"INFO: '{filename_parquet}' exists, using cached unconfigured data (--use-cache)")
+        df = pd.read_parquet(filename_parquet)
+        renameYearColumnsFromStringToInteger(df)
+        return df
+
+    unconfigured = processUnconfiguredFiles(release_id, release_config, no_concurrency=no_concurrency)
+    if unconfigured.empty:
+        return unconfigured
+
+    log(f"writing unconfigured cache '{filename_parquet}'")
+    frame_copy = unconfigured.copy()
+    frame_copy.columns = frame_copy.columns.map(str)
+    frame_copy.to_parquet(filename_parquet)
+
+    return unconfigured
+
+
 def buildUnifiedParquet(config, use_cache=False, max_to_process=None, no_concurrency=False):
     """Build a single wide-format parquet file combining all ISP releases (one column per year)."""
     frames = []
     for release_id, release_config in config.items():
         log(f"INFO: loading release '{release_id}' for unified parquet")
         outlooks = loadGenerationOutlooks(release_id, release_config, use_cache=use_cache, max_to_process=max_to_process, no_concurrency=no_concurrency)
+
+        # Also include unconfigured files from disk
+        unconfigured = loadUnconfiguredOutlooks(release_id, release_config, use_cache=use_cache, no_concurrency=no_concurrency)
+        if not unconfigured.empty:
+            log(f"INFO: adding {len(unconfigured)} unconfigured rows for '{release_id}'")
+            outlooks = pd.concat([outlooks, unconfigured], ignore_index=True)
+
         release_df = outlooks.copy()
         release_df.insert(0, 'Release', release_id)
         release_df['Units'] = release_df['Type'].map({
