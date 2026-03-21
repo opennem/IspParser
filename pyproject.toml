@@ -2,6 +2,14 @@
 name = "ispparser"
 version = "0.1.0"
 
+dependencies = [
+    "pandas",
+    "numpy",
+    "pytz",
+    "python-calamine",
+    "openpyxl",
+]
+
 [project.optional-dependencies]
 test = ["pytest"]
 

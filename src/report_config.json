@@ -87,7 +87,14 @@
         },
         "capacity_columns_to_drop": ["Existing+Committed in 2021"],
         "cdp_strip_odp": false,
-        "cdp_drop_values": []
+        "cdp_drop_values": [],
+        "cdp_names": {
+            "DP1": "Least-cost development path (all future projects at least-cost timing)",
+            "DP2": "Actionable projects only (no future network projects)",
+            "DP3": "Accelerated Marinus Link Cable 1",
+            "DP4": "Accelerated Marinus Link Cable 1 and Cable 2",
+            "DP5": "Accelerated Marinus Link, no VNI Option 6"
+        }
     },
     "2020_ISP_final": {
         "format": "2020",
@@ -144,7 +151,17 @@
         },
         "capacity_columns_to_drop": ["Existing+Committed in 2021"],
         "cdp_strip_odp": false,
-        "cdp_drop_values": []
+        "cdp_drop_values": [],
+        "cdp_names": {
+            "DP1": "Least-cost development path (all future projects at least-cost timing)",
+            "DP2": "Actionable projects only (no future network projects)",
+            "DP3": "Accelerated Marinus Link Cable 1",
+            "DP4": "Accelerated Marinus Link Cable 1 and Cable 2",
+            "DP5": "Accelerated Marinus Link, no VNI Option 6",
+            "DP6": "Least-cost + Marinus Link early works (ODP)",
+            "DP7": "Least-cost + Marinus Link and VNI West early works",
+            "DP8": "Accelerated VNI West + Marinus Link early works"
+        }
     },
     "2022_ISP_draft": {
         "scenarios": [
@@ -187,7 +204,8 @@
         },
         "capacity_columns_to_drop": ["Existing and Committed"],
         "cdp_strip_odp": false,
-        "cdp_drop_values": []
+        "cdp_drop_values": [],
+        "cdp_odp": "CDP11"
     },
     "2022_ISP_final": {
         "scenarios": [
@@ -230,7 +248,8 @@
         },
         "capacity_columns_to_drop": ["Existing and Committed"],
         "cdp_strip_odp": false,
-        "cdp_drop_values": []
+        "cdp_drop_values": [],
+        "cdp_odp": "CDP11"
     },
     "2024_ISP_draft": {
         "scenarios": [

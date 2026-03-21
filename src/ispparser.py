@@ -1037,6 +1037,23 @@ def writeNewJSONs(release, release_config, use_cache=False, max_to_process=None,
     if cdp_names:
         log(f"INFO: extracted {len(cdp_names)} CDP names")
 
+    # Fall back to (or merge with) config-level cdp_names
+    config_cdp_names = release_config.get("cdp_names", {})
+    if config_cdp_names:
+        merged = dict(config_cdp_names)
+        merged.update(cdp_names)  # workbook values take priority
+        cdp_names = merged
+        log(f"INFO: merged config cdp_names, total {len(cdp_names)}")
+
+    # Apply cdp_odp marker from config if the workbook didn't mark one
+    cdp_odp = release_config.get("cdp_odp")
+    if cdp_odp and cdp_odp in cdp_names:
+        has_odp = any('(ODP)' in desc for desc in cdp_names.values())
+        if not has_odp:
+            desc = cdp_names[cdp_odp]
+            cdp_names[cdp_odp] = f"{desc} (ODP)" if desc else "(ODP)"
+            log(f"INFO: marked {cdp_odp} as ODP from config")
+
     output_dir = os.path.join(OUTPUT_FOLDER, RELEASES_FOLDER, release)
     log(f"INFO: creating folder {output_dir}")
     os.makedirs(output_dir, exist_ok=True)
