@@ -181,7 +181,8 @@ body {
   box-shadow: 0 0 0 2px var(--color-primary-ring);
 }
 .control-group .ts-wrapper .ts-dropdown,
-.ts-wrapper .ts-dropdown {
+.ts-wrapper .ts-dropdown,
+body > .ts-dropdown {
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -204,14 +205,16 @@ body {
   max-height: none;
 }
 .control-group .ts-wrapper .ts-dropdown .option,
-.ts-wrapper .ts-dropdown .option {
+.ts-wrapper .ts-dropdown .option,
+body > .ts-dropdown .option {
   padding: 0.5rem 0.75rem;
   font-size: 0.85rem;
   white-space: nowrap;
   line-height: 1.5;
 }
 .control-group .ts-wrapper .ts-dropdown .option.active,
-.ts-wrapper .ts-dropdown .option.active {
+.ts-wrapper .ts-dropdown .option.active,
+body > .ts-dropdown .option.active {
   background: var(--color-primary-light);
   color: var(--color-text);
 }
@@ -380,7 +383,7 @@ body {
 }
 
 /* Responsive */
-@media (max-width: 950px) {
+@media (max-width: 800px) {
   .chart-grid,
   .chart-grid.compare-mode {
     grid-template-columns: 1fr;

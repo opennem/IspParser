@@ -900,7 +900,8 @@ async function init() {
       },
       item: function(data, escape) {
         const pillCls = 'cdp-pill' + (data.isOdp ? ' cdp-pill--odp' : '');
-        return '<div class="cdp-item"><span class="' + pillCls + '">' + escape(data.text) + '</span></div>';
+        const desc = data.desc ? '<span class="cdp-desc">' + escape(data.desc) + '</span>' : '';
+        return '<div class="cdp-item"><span class="' + pillCls + '">' + escape(data.text) + '</span>' + desc + '</div>';
       },
     },
     onChange: onPathwayChange,
