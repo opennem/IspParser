@@ -198,6 +198,7 @@ body > .ts-dropdown {
 #sel-pathway-ts-dropdown {
   width: 100%;
   max-width: 100%;
+  max-height: none;
   right: 0;
 }
 .control-group.control-group-cdp .ts-wrapper .ts-dropdown-content,
