@@ -115,6 +115,7 @@ const cache = new Map();
 let charts = [];
 let compareMode = false;
 const enabledReleases = new Set();
+const hiddenTechs = new Set();
 
 // DOM refs
 const selScenario = document.getElementById('sel-scenario');
@@ -291,12 +292,14 @@ function makeStackedChart(canvasId, title, series, techList, divisor, unit) {
     if (scaled.every(v => v === 0)) continue;
     datasets.push({
       label: tech.label,
+      techId: tech.id,
       data: scaled,
       backgroundColor: hexToRgba(tech.color, 0.7),
       borderColor: tech.color,
       borderWidth: 1,
       fill: true,
       pointRadius: 0,
+      hidden: isTechHidden(tech.id),
       tension: 0,
     });
   }
@@ -315,8 +318,8 @@ function makeStackedChart(canvasId, title, series, techList, divisor, unit) {
         y: { stacked: true, title: { display: true, text: unit } },
       },
       plugins: {
-        tooltip: { mode: 'index', intersect: false, callbacks: tooltipCallbacks },
-        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: { enabled: false },
+        legend: { display: false },
       },
       interaction: { mode: 'index', intersect: false },
     },
@@ -360,7 +363,7 @@ function makeCostChart(canvasId, series, divisor, unit) {
         y: { stacked: true, title: { display: true, text: unit } },
       },
       plugins: {
-        tooltip: { mode: 'index', intersect: false, callbacks: tooltipCallbacks },
+        tooltip: { enabled: false },
         legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } },
       },
       interaction: { mode: 'index', intersect: false },
@@ -410,12 +413,78 @@ function makeEmissionsChart(canvasId, emData, divisor, unit) {
       },
       plugins: {
         legend: { display: false },
-        tooltip: { mode: 'index', intersect: false, callbacks: tooltipCallbacks },
+        tooltip: { enabled: false },
       },
       interaction: { mode: 'index', intersect: false },
     },
   });
   charts.push(chart);
+}
+
+// ---------------------------------------------------------------------------
+// Fuel tech legend
+// ---------------------------------------------------------------------------
+
+const fuelTechLegend = document.getElementById('fuel-tech-legend');
+
+// Map equivalent tech IDs between energy/capacity lists
+const TECH_ALIASES = { battery_discharging: 'battery', battery: 'battery_discharging' };
+
+function isTechHidden(techId) {
+  return hiddenTechs.has(techId) || hiddenTechs.has(TECH_ALIASES[techId]);
+}
+
+function buildFuelTechLegend(techList) {
+  fuelTechLegend.innerHTML = '';
+  for (const tech of techList) {
+    const el = document.createElement('span');
+    el.className = 'fuel-tech-swatch' + (isTechHidden(tech.id) ? ' dimmed' : '');
+    el.dataset.techId = tech.id;
+    el.innerHTML = '<span class="swatch" style="background:' + tech.color + '"></span>' + tech.label;
+    el.addEventListener('click', (e) => onTechSwatchClick(tech.id, techList, e));
+    fuelTechLegend.appendChild(el);
+  }
+}
+
+function onTechSwatchClick(techId, techList, e) {
+  if (e.shiftKey) {
+    // Shift-click: solo this tech, or restore all if already solo
+    const visibleCount = techList.filter(t => !hiddenTechs.has(t.id)).length;
+    const isOnlyVisible = visibleCount === 1 && !hiddenTechs.has(techId);
+    hiddenTechs.clear();
+    if (!isOnlyVisible) {
+      for (const t of techList) {
+        if (t.id !== techId) hiddenTechs.add(t.id);
+      }
+    }
+  } else {
+    // Normal click: toggle this tech
+    if (hiddenTechs.has(techId)) {
+      hiddenTechs.delete(techId);
+    } else {
+      hiddenTechs.add(techId);
+      // If all are now hidden, show all
+      const allHidden = techList.every(t => hiddenTechs.has(t.id));
+      if (allHidden) hiddenTechs.clear();
+    }
+  }
+  applyTechVisibility(techList);
+}
+
+function applyTechVisibility(techList) {
+  // Update swatch classes
+  fuelTechLegend.querySelectorAll('.fuel-tech-swatch').forEach(el => {
+    el.classList.toggle('dimmed', isTechHidden(el.dataset.techId));
+  });
+  // Update chart datasets
+  for (const chart of charts) {
+    for (const ds of chart.data.datasets) {
+      if (ds.techId) {
+        ds.hidden = isTechHidden(ds.techId);
+      }
+    }
+    chart.update('none');
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -470,6 +539,9 @@ async function renderNormal() {
     makeCostChart('chart-cost', costSeries,
       TYPE_CONFIG.cost.divisor, TYPE_CONFIG.cost.unit);
 
+    // Build fuel tech legend (use energy techs as the superset)
+    buildFuelTechLegend(DETAIL_TECHS.energy);
+
   } catch (err) {
     console.error('Failed to load data:', err);
     showFileError(err.message);
@@ -511,6 +583,12 @@ async function renderComparison() {
     // Hide cost card
     document.getElementById('card-cost').style.display = 'none';
 
+    // Build legend from compare fuel groups
+    const compareGroupTechs = Object.entries(COMPARE_COLORS).map(([name, color]) => ({
+      id: name, label: name, color,
+    }));
+    buildFuelTechLegend(compareGroupTechs);
+
   } catch (err) {
     console.error('Failed to load comparison data:', err);
   }
@@ -528,8 +606,9 @@ function renderComparisonChart(canvasId, type, releases, allData) {
   const divisor = TYPE_CONFIG[type].divisor;
   const unit = TYPE_CONFIG[type].unit;
 
-  // Collect all years across releases for labels
+  // First pass: collect all years and raw grouped data
   let allYearsSet = new Set();
+  const rawSeries = [];
 
   for (let ri = 0; ri < releases.length; ri++) {
     const release = releases[ri];
@@ -541,26 +620,40 @@ function renderComparisonChart(canvasId, type, releases, allData) {
       const grouped = sumGroup(series, fuelTechs);
       if (!grouped) continue;
       grouped.years.forEach(y => allYearsSet.add(y));
-      const scaled = grouped.values.map(v => v / divisor);
-
-      datasets.push({
-        label: `${groupName} (${release.label})`,
-        data: grouped.years.map((y, i) => ({ x: y.toString(), y: scaled[i] })),
-        borderColor: COMPARE_COLORS[groupName],
-        borderDash: getCompareDash(release.id),
-        borderWidth: 2,
-        pointRadius: 0,
-        fill: false,
-        tension: 0,
-      });
+      rawSeries.push({ release, groupName, grouped });
     }
   }
 
-  const years = [...allYearsSet].sort().map(y => y.toString());
+  const years = [...allYearsSet].sort();
+  const yearIndex = new Map(years.map((y, i) => [y, i]));
+
+  // Second pass: align all datasets to shared year labels
+  for (const { release, groupName, grouped } of rawSeries) {
+    const aligned = new Array(years.length).fill(null);
+    for (let i = 0; i < grouped.years.length; i++) {
+      const idx = yearIndex.get(grouped.years[i]);
+      if (idx !== undefined) aligned[idx] = grouped.values[i] / divisor;
+    }
+    datasets.push({
+      label: `${groupName} (${release.label})`,
+      techId: groupName,
+      data: aligned,
+      borderColor: COMPARE_COLORS[groupName],
+      borderDash: getCompareDash(release.id),
+      borderWidth: 2,
+      pointRadius: 0,
+      fill: false,
+      tension: 0,
+      hidden: hiddenTechs.has(groupName),
+      spanGaps: true,
+    });
+  }
+
+  const yearLabels = years.map(y => y.toString());
 
   const chart = new Chart(ctx, {
     type: 'line',
-    data: { labels: years, datasets },
+    data: { labels: yearLabels, datasets },
     options: {
       responsive: true,
       maintainAspectRatio: true,
@@ -570,8 +663,8 @@ function renderComparisonChart(canvasId, type, releases, allData) {
         y: { title: { display: true, text: unit } },
       },
       plugins: {
-        tooltip: { mode: 'index', intersect: false, callbacks: tooltipCallbacks },
-        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } },
+        tooltip: { enabled: false },
+        legend: { display: false },
       },
       interaction: { mode: 'index', intersect: false },
     },
@@ -587,6 +680,7 @@ function renderEmissionsComparison(canvasId, releases, allData) {
   const divisor = TYPE_CONFIG.emissions.divisor;
   const unit = TYPE_CONFIG.emissions.unit;
   let allYearsSet = new Set();
+  const rawEmissions = [];
 
   for (let ri = 0; ri < releases.length; ri++) {
     const release = releases[ri];
@@ -595,25 +689,36 @@ function renderEmissionsComparison(canvasId, releases, allData) {
     const em = extractEmissions(data, '_all', pickDefaultPathway(pathways));
     if (!em) continue;
     em.years.forEach(y => allYearsSet.add(y));
-    const scaled = em.values.map(v => v / divisor);
+    rawEmissions.push({ release, em });
+  }
 
+  const years = [...allYearsSet].sort();
+  const yearIndex = new Map(years.map((y, i) => [y, i]));
+
+  for (const { release, em } of rawEmissions) {
+    const aligned = new Array(years.length).fill(null);
+    for (let i = 0; i < em.years.length; i++) {
+      const idx = yearIndex.get(em.years[i]);
+      if (idx !== undefined) aligned[idx] = em.values[i] / divisor;
+    }
     datasets.push({
       label: release.label,
-      data: em.years.map((y, i) => ({ x: y.toString(), y: scaled[i] })),
+      data: aligned,
       borderColor: '#E15759',
       borderDash: getCompareDash(release.id),
       borderWidth: 2,
       pointRadius: 0,
       fill: false,
       tension: 0,
+      spanGaps: true,
     });
   }
 
-  const years = [...allYearsSet].sort().map(y => y.toString());
+  const yearLabels = years.map(y => y.toString());
 
   const chart = new Chart(ctx, {
     type: 'line',
-    data: { labels: years, datasets },
+    data: { labels: yearLabels, datasets },
     options: {
       responsive: true,
       maintainAspectRatio: true,
@@ -623,8 +728,8 @@ function renderEmissionsComparison(canvasId, releases, allData) {
         y: { title: { display: true, text: unit } },
       },
       plugins: {
-        tooltip: { mode: 'index', intersect: false, callbacks: tooltipCallbacks },
-        legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: { enabled: false },
+        legend: { display: false },
       },
       interaction: { mode: 'index', intersect: false },
     },
@@ -728,6 +833,7 @@ function syncReleaseButtons() {
 function enterCompareMode() {
   compareMode = true;
   activeReleaseId = null;
+  hiddenTechs.clear();
   tsScenario.wrapper.closest('.control-group').style.display = 'none';
   tsRegion.wrapper.closest('.control-group').style.display = 'none';
   tsPathway.wrapper.closest('.controls-row').style.display = 'none';
@@ -737,6 +843,7 @@ function enterCompareMode() {
 
 function exitCompareMode(releaseId) {
   compareMode = false;
+  hiddenTechs.clear();
   activeReleaseId = releaseId || RELEASES[RELEASES.length - 1].id;
   tsScenario.wrapper.closest('.control-group').style.display = '';
   tsRegion.wrapper.closest('.control-group').style.display = '';
