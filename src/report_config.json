@@ -40,7 +40,12 @@
             {"label": "Fast", "file_name": "AEMO ISP 2020 - Scenario Comparison_Fast.xlsx"},
             {"label": "High DER", "file_name": "AEMO ISP 2020 - Scenario Comparison_High DER.xlsx"},
             {"label": "Slow", "file_name": "AEMO ISP 2020 - Scenario Comparison_Slow.xlsx"},
-            {"label": "Step", "file_name": "AEMO ISP 2020 - Scenario Comparison_Step.xlsx"}
+            {"label": "Step", "file_name": "AEMO ISP 2020 - Scenario Comparison_Step.xlsx"},
+            {"label": "Central West NSW", "file_name": "AEMO ISP 2020 - Sensitivity Comparison_CentralWestNSW.xlsx"},
+            {"label": "Delayed Snowy 2.0", "file_name": "AEMO ISP 2020 - Sensitivity Comparison_DelayedSnowy2.0.xlsx"},
+            {"label": "Early Load Closure", "file_name": "AEMO ISP 2020 - Sensitivity Comparison_EarlyLoadClosure.xlsx"},
+            {"label": "Early Yallourn Closure", "file_name": "AEMO ISP 2020 - Sensitivity Comparison_EarlyYallournClosure.xlsx"},
+            {"label": "Repeal of QRET", "file_name": "AEMO ISP 2020 - Sensitivity Comparison_RepealofQRET.xlsx"}
         ],
         "fueltech_mappings": {
             "Black Coal": "coal_black",
