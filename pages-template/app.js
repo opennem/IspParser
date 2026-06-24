@@ -69,7 +69,7 @@ const COMPARE_COLORS = {
 };
 
 // Dash patterns cycle for comparison mode (newest first = solid)
-const DASH_PATTERNS = [[], [8, 4], [2, 4], [1, 3], [4, 2, 1, 2]];
+const DASH_PATTERNS = [[], [8, 4], [2, 4], [1, 3], [6, 3, 1, 3], [10, 5], [2, 6], [12, 3, 2, 3]];
 
 function getCompareDash(releaseId) {
   // Releases are sorted oldest-first; newest gets solid line
@@ -695,18 +695,23 @@ function renderEmissionsComparison(canvasId, releases, allData) {
   const years = [...allYearsSet].sort();
   const yearIndex = new Map(years.map((y, i) => [y, i]));
 
+  // Highlight the most recent release (RELEASES is sorted oldest-first) in the
+  // brand colour; older vintages stay red and are told apart by dash pattern.
+  const newestId = RELEASES.length ? RELEASES[RELEASES.length - 1].id : null;
   for (const { release, em } of rawEmissions) {
     const aligned = new Array(years.length).fill(null);
     for (let i = 0; i < em.years.length; i++) {
       const idx = yearIndex.get(em.years[i]);
       if (idx !== undefined) aligned[idx] = em.values[i] / divisor;
     }
+    const isNewest = release.id === newestId;
     datasets.push({
       label: release.label,
       data: aligned,
-      borderColor: '#E15759',
-      borderDash: getCompareDash(release.id),
-      borderWidth: 2,
+      borderColor: isNewest ? '#069FAF' : '#E15759',
+      borderDash: isNewest ? [] : getCompareDash(release.id),
+      borderWidth: isNewest ? 3 : 2,
+      pointStyle: 'line',
       pointRadius: 0,
       fill: false,
       tension: 0,
@@ -729,7 +734,12 @@ function renderEmissionsComparison(canvasId, releases, allData) {
       },
       plugins: {
         tooltip: { enabled: false },
-        legend: { display: false },
+        // Per-release legend (line samples show each vintage's colour + dash)
+        legend: {
+          display: true,
+          position: 'right',
+          labels: { usePointStyle: true, pointStyle: 'line', boxWidth: 34, font: { size: 11 } },
+        },
       },
       interaction: { mode: 'index', intersect: false },
     },

@@ -12,6 +12,8 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest"]
+# For scripts/generate_emissions_screenshot.py (then: playwright install chromium)
+screenshots = ["playwright"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -452,6 +452,14 @@ body > .ts-dropdown .option.active {
     margin-left: -1px;
     margin-top: -1px;
   }
+  /* In the wrapped grid the -1px margins collapse adjacent borders, so every
+     button keeps its own left border. This overrides the single-row desktop
+     rule (.release-btn + .release-btn { border-left: none }) which would
+     otherwise strip the left border off the first button of each wrapped row
+     (e.g. 2024D), since that collapse uses DOM adjacency, not visual rows. */
+  .controls .release-bar .release-btn:not(.release-btn-all) {
+    border-left: 1px solid var(--color-border-input);
+  }
   /* Scenario dropdown: truncate, don't wrap */
   .control-group-scenario {
     min-width: 0;
