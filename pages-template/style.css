@@ -82,7 +82,7 @@ body {
 }
 .controls-row {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 0.6rem;
   align-items: center;
 }
@@ -136,7 +136,9 @@ body {
 }
 .release-bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  row-gap: 4px;
   border: none;
   padding: 0;
   margin: 0;
@@ -278,8 +280,11 @@ body > .ts-dropdown .option.active {
 .release-btn:last-child {
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
+/* Collapse the shared vertical border by overlapping (instead of border-left:none)
+   so the bar can wrap onto multiple rows and each row's first button keeps its
+   left border. */
 .release-btn:not(.release-btn-all) + .release-btn:not(.release-btn-all) {
-  border-left: none;
+  margin-left: -1px;
 }
 .release-btn:hover {
   background: var(--color-primary-light);
@@ -451,14 +456,6 @@ body > .ts-dropdown .option.active {
     border: 1px solid var(--color-border-input);
     margin-left: -1px;
     margin-top: -1px;
-  }
-  /* In the wrapped grid the -1px margins collapse adjacent borders, so every
-     button keeps its own left border. This overrides the single-row desktop
-     rule (.release-btn + .release-btn { border-left: none }) which would
-     otherwise strip the left border off the first button of each wrapped row
-     (e.g. 2024D), since that collapse uses DOM adjacency, not visual rows. */
-  .controls .release-bar .release-btn:not(.release-btn-all) {
-    border-left: 1px solid var(--color-border-input);
   }
   /* Scenario dropdown: truncate, don't wrap */
   .control-group-scenario {
