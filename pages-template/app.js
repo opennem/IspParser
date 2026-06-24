@@ -69,12 +69,58 @@ const COMPARE_COLORS = {
 };
 
 // Dash patterns cycle for comparison mode (newest first = solid)
-const DASH_PATTERNS = [[], [8, 4], [2, 4], [1, 3], [4, 2, 1, 2]];
+const DASH_PATTERNS = [[], [8, 4], [2, 4], [1, 3], [6, 3, 1, 3], [10, 5], [2, 6], [12, 3, 2, 3]];
 
 function getCompareDash(releaseId) {
   // Releases are sorted oldest-first; newest gets solid line
   const idx = RELEASES.length - 1 - RELEASES.findIndex(r => r.id === releaseId);
   return DASH_PATTERNS[Math.min(idx, DASH_PATTERNS.length - 1)];
+}
+
+// Compare mode plots one consistent scenario across releases. "Step Change" is
+// common to every ISP release, so use it; fall back to the first scenario.
+function pickCompareScenario(release) {
+  return release.scenarios.includes('step_change') ? 'step_change' : release.scenarios[0];
+}
+
+// Distinct solid colours for the emissions comparison (one line per release).
+// The newest release uses the brand colour; older vintages cycle this palette.
+const EMISSIONS_NEW_COLOR = '#069FAF';
+const EMISSIONS_COMPARE_COLORS = ['#F28E2B', '#B07AA1', '#E15759', '#9C755F', '#76B7B2', '#59A14F', '#EDC948'];
+
+// Build the custom per-release legend beside the emissions chart. Each entry
+// shows a colour-matched line sample, the release name, and the scenario below
+// it in a smaller font. Pass null to hide the legend (single-release mode).
+function setEmissionsLegend(items) {
+  const el = document.getElementById('emissions-legend');
+  if (!el) return;
+  el.innerHTML = '';
+  if (!items || !items.length) {
+    el.classList.remove('is-visible');
+    el.setAttribute('aria-hidden', 'true');
+    return;
+  }
+  for (const it of items) {
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    const sw = document.createElement('span');
+    sw.className = 'legend-swatch';
+    sw.style.borderTopColor = it.color;
+    sw.style.borderTopWidth = (it.width || 2) + 'px';
+    const txt = document.createElement('span');
+    txt.className = 'legend-text';
+    const rel = document.createElement('span');
+    rel.className = 'legend-release';
+    rel.textContent = it.release;
+    const scen = document.createElement('span');
+    scen.className = 'legend-scenario';
+    scen.textContent = it.scenario;
+    txt.append(rel, scen);
+    item.append(sw, txt);
+    el.appendChild(item);
+  }
+  el.classList.add('is-visible');
+  el.setAttribute('aria-hidden', 'false');
 }
 
 const COST_COLORS = {
@@ -373,6 +419,7 @@ function makeCostChart(canvasId, series, divisor, unit) {
 }
 
 function makeEmissionsChart(canvasId, emData, divisor, unit) {
+  setEmissionsLegend(null);  // single-release mode: no per-release legend
   const existing = Chart.getChart(canvasId);
   if (existing) existing.destroy();
   const ctx = document.getElementById(canvasId).getContext('2d');
@@ -569,9 +616,9 @@ async function renderComparison() {
   const activeReleases = RELEASES.filter(r => enabledReleases.has(r.id));
 
   try {
-    // Use the first scenario for each release in comparison mode
+    // Use one consistent scenario (Step Change) across releases in comparison mode
     const allData = await Promise.all(
-      activeReleases.map(r => loadData(r.id, r.scenarios[0]))
+      activeReleases.map(r => loadData(r.id, pickCompareScenario(r)))
     );
 
     // Generation comparison
@@ -695,22 +742,38 @@ function renderEmissionsComparison(canvasId, releases, allData) {
   const years = [...allYearsSet].sort();
   const yearIndex = new Map(years.map((y, i) => [y, i]));
 
+  // One solid line per release in a distinct colour (so the legend can match
+  // exactly). The most recent release (RELEASES is oldest-first) uses the brand
+  // colour and a heavier line so it stands out.
+  const newestId = RELEASES.length ? RELEASES[RELEASES.length - 1].id : null;
+  const legendItems = [];
+  let colorIdx = 0;
   for (const { release, em } of rawEmissions) {
     const aligned = new Array(years.length).fill(null);
     for (let i = 0; i < em.years.length; i++) {
       const idx = yearIndex.get(em.years[i]);
       if (idx !== undefined) aligned[idx] = em.values[i] / divisor;
     }
+    const isNewest = release.id === newestId;
+    const color = isNewest
+      ? EMISSIONS_NEW_COLOR
+      : EMISSIONS_COMPARE_COLORS[colorIdx++ % EMISSIONS_COMPARE_COLORS.length];
+    const width = isNewest ? 3 : 2;
     datasets.push({
       label: release.label,
       data: aligned,
-      borderColor: '#E15759',
-      borderDash: getCompareDash(release.id),
-      borderWidth: 2,
+      borderColor: color,
+      borderWidth: width,
       pointRadius: 0,
       fill: false,
       tension: 0,
       spanGaps: true,
+    });
+    legendItems.push({
+      color,
+      width,
+      release: release.label,
+      scenario: formatScenario(pickCompareScenario(release)),
     });
   }
 
@@ -729,12 +792,13 @@ function renderEmissionsComparison(canvasId, releases, allData) {
       },
       plugins: {
         tooltip: { enabled: false },
-        legend: { display: false },
+        legend: { display: false },  // replaced by the custom HTML legend
       },
       interaction: { mode: 'index', intersect: false },
     },
   });
   charts.push(chart);
+  setEmissionsLegend(legendItems);
 }
 
 function resetChartCards(titles) {

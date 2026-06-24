@@ -1,6 +1,8 @@
 ![logo](https://openelectricity.org.au/img/logo.svg)
 
 <a href="https://opennem.github.io/IspParser/#compare=true"><img src="docs/emissions-comparison.png" alt="Emissions Comparison" width="500"></a>
+<!-- Regenerate this image with: python scripts/generate_emissions_screenshot.py
+     (requires the built site/ plus `pip install playwright && playwright install chromium`) -->
 
 **[View verification charts on GitHub Pages](https://opennem.github.io/IspParser/)**
 
@@ -61,6 +63,7 @@ When `--unified` is passed, the parser also generates `output/all_isps.parquet` 
 | 2024 ISP Draft | standard | 2025–2052 (calendar) | Step Change, Progressive Change, Green Energy Exports | [2024_ISP_draft.zip](site/2024_ISP_draft.zip) |
 | 2024 ISP Final | standard | 2024-25–2051-52 (financial) | Step Change, Green Energy Exports, Progressive Change | [2024_ISP_final.zip](site/2024_ISP_final.zip) |
 | 2026 ISP Draft | standard | 2026-27–2049-50 (financial) | Step Change, Accelerated Transition, Slower Growth | [2026_ISP_draft.zip](site/2026_ISP_draft.zip) |
+| 2026 ISP Final | standard | 2026-27–2049-50 (financial) | Step Change, Accelerated Transition, Slower Growth + 6 Step Change sensitivities | [2026_ISP_final.zip](site/2026_ISP_final.zip) |
 
 ### Release notes
 
@@ -71,6 +74,7 @@ When `--unified` is passed, the parser also generates `output/all_isps.parquet` 
 - **2024 ISP Draft** — Calendar years 2025–2052. CDP names normalised (`CDP11 (ODP)` → `CDP11`, `Least-cost DP` rows dropped).
 - **2024 ISP Final** — First release using financial years. Introduces subregions (collapsed during processing) and per-region emissions. Adds emissions cost category.
 - **2026 ISP Draft** — Financial years 2026-27 to 2049-50. Renamed technology labels (e.g. `Rooftop and other small-scale solar`). 14 cost categories including retirement, distribution, system security. 24 CDPs including Counterfactual.
+- **2026 ISP Final** — Same workbook structure as the 2026 Draft. Adds 6 Step Change sensitivity scenarios (Constrained Delivery, Higher/Lower Energy Efficiency, Higher Demand, No Further CER Coordination, No Further VPP Uptake). 35 CDPs in the Core scenarios including Counterfactual (up from 24 in the draft).
 
 ## Interactive Charts
 

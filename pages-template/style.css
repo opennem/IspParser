@@ -82,7 +82,7 @@ body {
 }
 .controls-row {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 0.6rem;
   align-items: center;
 }
@@ -136,7 +136,9 @@ body {
 }
 .release-bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  row-gap: 4px;
   border: none;
   padding: 0;
   margin: 0;
@@ -278,8 +280,11 @@ body > .ts-dropdown .option.active {
 .release-btn:last-child {
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
+/* Collapse the shared vertical border by overlapping (instead of border-left:none)
+   so the bar can wrap onto multiple rows and each row's first button keeps its
+   left border. */
 .release-btn:not(.release-btn-all) + .release-btn:not(.release-btn-all) {
-  border-left: none;
+  margin-left: -1px;
 }
 .release-btn:hover {
   background: var(--color-primary-light);
@@ -356,6 +361,50 @@ body > .ts-dropdown .option.active {
 }
 .chart-card canvas {
   width: 100% !important;
+}
+/* Emissions card: canvas + custom per-release legend side by side */
+.chart-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.chart-canvas-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.chart-legend {
+  display: none;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 42%;
+}
+.chart-legend.is-visible {
+  display: flex;
+}
+.chart-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.chart-legend .legend-swatch {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 0;
+  border-top-style: solid;
+}
+.chart-legend .legend-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.chart-legend .legend-release {
+  font-size: 0.78rem;
+  color: var(--color-text);
+}
+.chart-legend .legend-scenario {
+  font-size: 0.66rem;
+  color: var(--color-text-muted);
 }
 
 /* Comparison grid — 3 cols for fuel groups */

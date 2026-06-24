@@ -383,5 +383,59 @@
         "capacity_columns_to_drop": ["2025-26"],
         "cdp_strip_odp": false,
         "cdp_drop_values": []
+    },
+    "2026_ISP_final": {
+        "scenarios": [
+            {"label": "Step Change", "file_name": "2026 ISP - Step Change - Core.xlsx"},
+            {"label": "Accelerated Transition", "file_name": "2026 ISP - Accelerated Transition - Core.xlsx"},
+            {"label": "Slower Growth", "file_name": "2026 ISP - Slower Growth - Core.xlsx"},
+            {"label": "Step Change - Constrained Delivery", "file_name": "2026 ISP - Step Change - Constrained Delivery.xlsx"},
+            {"label": "Step Change - Higher Demand", "file_name": "2026 ISP - Step Change - Higher Demand.xlsx"},
+            {"label": "Step Change - Higher Energy Efficiency", "file_name": "2026 ISP - Step Change - Higher Energy Efficiency.xlsx"},
+            {"label": "Step Change - Lower Energy Efficiency", "file_name": "2026 ISP - Step Change - Lower Energy Efficiency.xlsx"},
+            {"label": "Step Change - No Further CER Coordination", "file_name": "2026 ISP - Step Change - No Further CER Coordination.xlsx"},
+            {"label": "Step Change - No Further VPP Uptake", "file_name": "2026 ISP - Step Change - No Further VPP Uptake.xlsx"}
+        ],
+        "fueltech_mappings": {
+            "Brown coal": "coal_brown",
+            "Black coal": "coal_black",
+            "Mid-merit gas": "gas_ccgt",
+            "Flexible gas with CCS": "gas_ccgt_ccs",
+            "Flexible gas": "gas_ocgt",
+            "Offshore wind": "wind_offshore",
+            "Wind": "wind",
+            "Hydro": "hydro",
+            "DSP": "demand_response",
+            "Imports": "imports",
+            "Exports": "exports",
+            "Rooftop and other small-scale solar": "solar_rooftop",
+            "Utility-scale solar": "solar_utility",
+            "Utility-scale storage": "battery_discharging",
+            "Utility-scale storage load": "battery_charging",
+            "Coordinated CER storage": "battery_VPP_discharging",
+            "Coordinated CER storage load": "battery_VPP_charging",
+            "Passive CER storage": "battery_distributed_discharging",
+            "Passive CER storage load": "battery_distributed_charging",
+            "Other renewable fuels": "bioenergy"
+        },
+        "cost_mappings": {
+            "Generation, storage and electrolyser capital costs": "generator_capital",
+            "Generation, storage and electrolyser FOM costs": "fixed_operating_and_maintenance",
+            "Generation, storage and electrolyser VOM costs": "variable_operating_and_maintenance",
+            "Generation, storage and electrolyser retirement costs": "generator_retirement",
+            "Fuel costs": "fuel",
+            "DSP+USE costs": "dsp_use",
+            "Emissions costs": "emissions_cost",
+            "REZ capital costs": "rez_capital",
+            "REZ O&M costs": "rez_operations_and_maintenance",
+            "Flow path capital costs": "flow_path_capital",
+            "Flow path O&M costs": "flow_path_operations_and_maintenance",
+            "Distribution capital costs": "distribution_capital",
+            "Distribution O&M costs": "distribution_operations_and_maintenance",
+            "System security costs": "system_security"
+        },
+        "capacity_columns_to_drop": ["2025-26"],
+        "cdp_strip_odp": false,
+        "cdp_drop_values": []
     }
 }
