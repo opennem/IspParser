@@ -64,7 +64,10 @@
       </div>
       <div class="chart-card" id="card-emissions">
         <h3>Emissions</h3>
-        <canvas id="chart-emissions"></canvas>
+        <div class="chart-row">
+          <div class="chart-canvas-wrap"><canvas id="chart-emissions"></canvas></div>
+          <div class="chart-legend" id="emissions-legend" aria-hidden="true"></div>
+        </div>
         <div class="loading-overlay hidden" id="load-emissions"><div class="spinner"></div></div>
       </div>
       <div class="chart-card" id="card-cost">

@@ -362,6 +362,50 @@ body > .ts-dropdown .option.active {
 .chart-card canvas {
   width: 100% !important;
 }
+/* Emissions card: canvas + custom per-release legend side by side */
+.chart-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.chart-canvas-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.chart-legend {
+  display: none;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 42%;
+}
+.chart-legend.is-visible {
+  display: flex;
+}
+.chart-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.chart-legend .legend-swatch {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 0;
+  border-top-style: solid;
+}
+.chart-legend .legend-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.chart-legend .legend-release {
+  font-size: 0.78rem;
+  color: var(--color-text);
+}
+.chart-legend .legend-scenario {
+  font-size: 0.66rem;
+  color: var(--color-text-muted);
+}
 
 /* Comparison grid — 3 cols for fuel groups */
 .chart-grid.compare-mode {
